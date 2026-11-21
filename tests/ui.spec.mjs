@@ -365,7 +365,7 @@ test("les liens de vue se copient et la navigation conserve les filtres", async 
   await page.getByLabel("Filtrer par équipe").selectOption(p.teamId);
   await page.getByLabel("Rechercher un joueur").fill(p.name);
   await page.getByRole("button", { name: "Trier par points totaux" }).click();
-  for (const [label, suffix] of [["Toutes les statistiques", ""], ["Meneurs par catégorie", "#meneurs"]]) {
+  for (const [label, suffix] of [["Statistiques Individuelles", ""], ["Meneurs par catégorie", "#meneurs"]]) {
     const link = page.getByRole("link", { name: label, exact: true });
     await link.focus();
     await page.keyboard.press("Enter");
