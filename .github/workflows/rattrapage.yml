@@ -21,7 +21,7 @@ jobs:
           GH_REPO: ${{ github.repository }}
         run: |
           heure=$(date -u +%Y-%m-%dT%H)
-          url="https://martbedard.github.io/RSEQ_Basket_D2_Top50/data.json"
+          url="https://martbedard.github.io/RSEQ_Basketball/data.json"
           if curl --fail --silent --show-error --retry 2 --max-time 15 "$url?verification=$GITHUB_RUN_ID-$GITHUB_RUN_ATTEMPT" \
               | jq -e --arg heure "$heure" '.updated | startswith($heure)' > /dev/null; then
             echo "Le site a déjà publié une extraction pour cette heure UTC ($heure)." >> "$GITHUB_STEP_SUMMARY"
