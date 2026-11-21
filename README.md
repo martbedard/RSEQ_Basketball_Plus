@@ -1,8 +1,8 @@
-# RSEQ Basketball
+# RSEQ Basketball Plus
 
-**Site du classement** — <https://martbedard.github.io/RSEQ_Basketball/>
+**Site du classement** — <https://martbedard.github.io/RSEQ_Basketball_Plus/>
 
-[Exécutions GitHub Actions](https://github.com/martbedard/RSEQ_Basketball/actions/workflows/classement.yml) · [Calendrier officiel RSEQ](https://www.rseq-stats.ca/collegial/ne/basketball-m-d2/)
+[Exécutions GitHub Actions](https://github.com/martbedard/RSEQ_Basketball_Plus/actions/workflows/classement.yml) · [Calendrier officiel RSEQ](https://www.rseq-stats.ca/collegial/ne/basketball-m-d2/)
 
 Classement indépendant des marqueurs du collégial masculin D2, conférence Nord-Est, section QCA-EDQ-SLSJ, saison régulière 2026-2027. La vue **Tous** affiche par défaut chaque joueur admissible. Le tri par statistique affiche le rang pour cette statistique parmi tous les joueurs admissibles. Les joueurs à égalité pour cette statistique partagent le même rang et sont affichés dans l’ordre du rang général. Les filtres conservent ces rangs et les sélections Top 10, 25 et 50 utilisent le rang général. L’export CSV reprend exactement les lignes affichées, avec un séparateur point-virgule, une virgule décimale et un BOM UTF-8 pour Excel.
 
@@ -29,8 +29,8 @@ Les portraits de Limoilou sont recadrés à partir de la photo d’équipe 2026-
 Python 3.10+ suffit à produire et servir le site. Node.js 22+ et npm servent aux tests de l’interface.
 
 ```sh
-git clone https://github.com/martbedard/RSEQ_Basketball.git
-cd RSEQ_Basketball
+git clone https://github.com/martbedard/RSEQ_Basketball_Plus.git
+cd RSEQ_Basketball_Plus
 python3 scripts/sync.py
 python3 -m http.server 8000 --directory site
 ```
@@ -57,7 +57,7 @@ Le job d’extraction a un accès en lecture. Celui de publication reçoit uniqu
 
 ## Diagnostic
 
-1. Ouvrir les [exécutions planifiées](https://github.com/martbedard/RSEQ_Basketball/actions/workflows/classement.yml?query=event%3Aschedule), sélectionner une exécution, puis **build → Extraire et valider les huit équipes**. L’étape d’extraction indique chaque équipe, ses MJ et son nombre de joueurs admissibles. Les erreurs incluent le nom et l’identifiant de l’équipe.
+1. Ouvrir les [exécutions planifiées](https://github.com/martbedard/RSEQ_Basketball_Plus/actions/workflows/classement.yml?query=event%3Aschedule), sélectionner une exécution, puis **build → Extraire et valider les huit équipes**. L’étape d’extraction indique chaque équipe, ses MJ et son nombre de joueurs admissibles. Les erreurs incluent le nom et l’identifiant de l’équipe.
 2. Une requête expire après 20 secondes. En cas de panne réseau ou de réponse illisible, le client réessaie deux fois avec des délais croissants. Une incohérence de saison, d’association, de statistiques ou de couverture interrompt la publication. GitHub Pages conserve le dernier déploiement réussi et son horodatage d’origine.
 3. La **dernière vérification auprès du RSEQ** correspond à la collecte des données affichées, en heure du Québec. L’horodatage avance après une collecte complète publiée, même si les statistiques du RSEQ sont identiques. Une page servie sans premier fichier de données signale l’attente de la première extraction. Si aucun déploiement n’a encore réussi, GitHub Pages peut renvoyer sa propre page 404.
 4. Le prochain passage réessaie automatiquement. Pour un diagnostic immédiat, utiliser **Run workflow → main**. Une exécution planifiée peut être retardée ou omise par GitHub. Après 60 jours sans activité, GitHub peut désactiver la planification. Le cas échéant, sélectionner **Enable workflow**. Une panne du RSEQ ou de GitHub peut allonger le délai entre deux extractions.
