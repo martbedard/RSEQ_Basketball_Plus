@@ -429,19 +429,32 @@ test("le calendrier partage les matchs et résultats de la saison régulière", 
   await expect(page).toHaveURL(/#calendrier$/);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Calendrier");
   await expect(page.getByRole("link", { name: "Calendrier", exact: true })).toHaveAttribute("aria-current", "page");
-  const table = page.getByRole("table", { name: "Calendrier de la saison régulière" });
-  const rows = table.locator("tbody tr");
+  const schedule = page.getByRole("region", { name: "Calendrier", exact: true });
+  const rows = schedule.locator("tbody tr");
   expect(data.games.length).toBeGreaterThan(0);
   await expect(rows).toHaveCount(data.games.length);
-  const dates = (await table.locator("time").evaluateAll(nodes => nodes.map(node => node.dateTime)));
+  const months = [...new Set(data.games.map(game => game.date?.slice(0, 7)))];
+  await expect(schedule.getByRole("heading", { level: 2 })).toHaveCount(months.length);
+  const monthName = new Intl.DateTimeFormat("fr-CA", { month: "long", year: "numeric", timeZone: "UTC" });
+  for (const month of months) {
+    const label = month ? monthName.format(new Date(month + "-01")) : "Dates à confirmer";
+    const table = schedule.getByRole("table", { name: label, exact: true });
+    await expect(table.locator("tbody tr")).toHaveCount(
+      data.games.filter(game => game.date?.slice(0, 7) === month).length,
+    );
+  }
+  const dates = await schedule.locator("time").evaluateAll(nodes => nodes.map(node => node.dateTime));
   expect(dates).toEqual([...dates].sort());
   const scored = data.games.findIndex(game => game.score);
   const game = data.games[scored];
   const names = new Map(data.teams.map(team => [team.id, team.name]));
   const cells = rows.nth(scored).getByRole("cell");
   await expect(cells.nth(0)).toContainText(game.venue);
-  await expect(cells.nth(1)).toHaveText(names.get(game.visitor));
-  await expect(cells.nth(2)).toHaveText(names.get(game.home));
+  for (const [index, team] of [[1, game.visitor], [2, game.home]]) {
+    const link = cells.nth(index).getByRole("link", { name: names.get(team), exact: true });
+    await expect(link).toHaveAttribute("href", `https://diffusion.rseq.ca/Default?Type=Team&TeamId=${team}`);
+    await expect(link).toHaveAttribute("target", "_blank");
+  }
   await expect(cells.nth(3).getByRole("link", { name: game.score.join(" – ") }))
     .toHaveAttribute("href", `https://diffusion.rseq.ca/Default.aspx?Type=Game&GameId=${game.id}`);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);

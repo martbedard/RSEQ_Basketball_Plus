@@ -9,8 +9,8 @@
       content="Classement, calendrier et statistiques individuelles du basketball collégial masculin D2 du RSEQ, conférence Nord-Est, saison 2026-2027."
     />
     <title>RSEQ Basketball D2 - M - Nord Est</title>
-    <link rel="stylesheet" href="./style.css?v=calendrier"></script>
-    <script type="module" src="./app.mjs?v=calendrier"></script>
+    <link rel="stylesheet" href="./style.css?v=calendrier-mois" />
+    <script type="module" src="./app.mjs?v=calendrier-mois"></script>
   </head>
   <body>
     <header>
@@ -54,22 +54,25 @@
         <span id="copy-feedback" aria-live="polite"></span>
         <input id="share-url" aria-label="Lien à copier" readonly hidden />
       </div>
-      <section id="schedule-view" class="ranking" aria-label="Calendrier" hidden>
+      <section id="schedule-view" aria-label="Calendrier" hidden>
         <p class="notice" role="status" id="schedule-notice">Chargement du calendrier…</p>
-        <div id="schedule-scroll" class="scroll" tabindex="0" role="region"
-          aria-label="Tableau des matchs, défilement horizontal" hidden>
-          <table aria-label="Calendrier de la saison régulière">
-            <thead>
-              <tr>
-                <th scope="col">Date et lieu</th>
-                <th scope="col">Équipe visiteuse</th>
-                <th scope="col">Équipe locale</th>
-                <th scope="col">Résultat</th>
-              </tr>
-            </thead>
-            <tbody id="schedule-body"></tbody>
-          </table>
-        </div>
+        <div id="schedule-months"></div>
+        <template id="schedule-month-template">
+          <section class="ranking schedule-month">
+            <h2></h2>
+            <table>
+              <thead>
+                <tr>
+                  <th scope="col">Date et lieu</th>
+                  <th scope="col">Visiteurs</th>
+                  <th scope="col">À domicile</th>
+                  <th scope="col">Résultat</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </section>
+        </template>
         <div class="footnote">
           <span>Saison régulière · QCA-EDQ-SLSJ · Heures du Québec</span>
           <a href="https://www.rseq-stats.ca/collegial/ne/basketball-m-d2/"

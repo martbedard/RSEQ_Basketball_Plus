@@ -16,6 +16,11 @@ const gameDates = new Intl.DateTimeFormat("fr-CA", {
   day: "numeric",
   month: "short",
 });
+const gameMonths = new Intl.DateTimeFormat("fr-CA", {
+  timeZone: "UTC",
+  month: "long",
+  year: "numeric",
+});
 function element(tag, text) {
   const node = document.createElement(tag);
   if (text != null) node.textContent = text;
@@ -244,7 +249,20 @@ function renderStandings() {
 function renderSchedule(teams) {
   const { games } = dataset;
   const names = new Map(teams.map(team => [team.id, team.name]));
-  $("schedule-body").replaceChildren(...(games ?? []).map(game => {
+  const sections = document.createDocumentFragment();
+  const months = new Map();
+  for (const game of games ?? []) {
+    const month = game.date?.slice(0, 7);
+    if (!months.has(month)) {
+      const section = $("schedule-month-template").content.firstElementChild.cloneNode(true);
+      const heading = section.querySelector("h2");
+      heading.id = "schedule-month-" + (month ?? "unknown");
+      heading.textContent = month ? gameMonths.format(new Date(game.date)) : "Dates à confirmer";
+      section.setAttribute("aria-labelledby", heading.id);
+      section.querySelector("table").setAttribute("aria-labelledby", heading.id);
+      months.set(month, section.querySelector("tbody"));
+      sections.append(section);
+    }
     const row = element("tr");
     const details = element("td");
     if (game.date) {
@@ -259,8 +277,10 @@ function renderSchedule(teams) {
       details.append(` · ${Number(hours)} h${minutes === "00" ? "" : " " + minutes}`);
     }
     if (game.venue) details.append(element("small", game.venue));
-    const visitor = element("td", names.get(game.visitor));
-    const home = element("td", names.get(game.home));
+    const visitor = element("td");
+    visitor.append(teamLink(game.visitor, names.get(game.visitor)));
+    const home = element("td");
+    home.append(teamLink(game.home, names.get(game.home)));
     const result = element("td");
     if (game.score) {
       const link = element("a", game.score.join(" – "));
@@ -272,9 +292,9 @@ function renderSchedule(teams) {
       result.textContent = game.cancelled ? "Annulé" : "—";
     }
     row.append(details, visitor, home, result);
-    return row;
-  }));
-  $("schedule-scroll").hidden = !games?.length;
+    months.get(month).append(row);
+  }
+  $("schedule-months").replaceChildren(sections);
   $("schedule-notice").hidden = Boolean(games?.length);
   $("schedule-notice").textContent = games
     ? "Aucun match au calendrier."
