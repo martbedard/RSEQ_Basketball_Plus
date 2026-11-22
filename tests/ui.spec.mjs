@@ -403,6 +403,9 @@ test("le classement affiche les résultats du RSEQ et les points par match", asy
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Classement des équipes");
   await expect(page.getByRole("link", { name: "Classement", exact: true })).toHaveAttribute("aria-current", "page");
   const table = page.getByRole("table", { name: "Classement des équipes en saison régulière" });
+  await expect(table.getByRole("columnheader")).toHaveText([
+    "Pos", "Équipe", "MJ", "V", "D", "PP", "PP/Match", "PC", "PC/Match", "Moy", "Diff", "PTS",
+  ]);
   const rows = table.locator("tbody tr");
   const perGame = new Intl.NumberFormat("fr-CA", {
     minimumFractionDigits: 1,
@@ -413,8 +416,8 @@ test("le classement affiche les résultats du RSEQ et les points par match", asy
   for (const [i, team] of standings.entries()) {
     await expect(rows.nth(i).getByRole("cell")).toHaveText([
       team.position, team.name, team.games, team.wins, team.losses, team.pointsFor,
-      team.pointsAgainst,
       team.games ? perGame.format(team.pointsFor / team.games) : "—",
+      team.pointsAgainst,
       team.games ? perGame.format(team.pointsAgainst / team.games) : "—",
       team.average, team.difference, team.points,
     ].map(String));
@@ -542,7 +545,7 @@ test("les colonnes du classement se trient dans les deux sens", async ({ page })
   await expect(page.locator("#standings-head [aria-sort]")).toHaveAttribute("data-key", "position");
   expect(await highlightMatchesSort()).toBe(true);
   const keys = ["position", "name", "games", "wins", "losses", "pointsFor",
-    "pointsAgainst", "pointsForPerGame", "pointsAgainstPerGame", "average", "difference", "points"];
+    "pointsForPerGame", "pointsAgainst", "pointsAgainstPerGame", "average", "difference", "points"];
   for (const key of keys) {
     const header = page.locator(`#standings-head th[data-key="${key}"]`);
     const button = header.getByRole("button");
