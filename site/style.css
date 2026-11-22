@@ -514,6 +514,13 @@ td:first-child {
   font-weight: 700;
   color: var(--muted);
 }
+#standings-view :is(th, td):nth-child(3) {
+  text-align: right;
+}
+#standings-view :is(th, td):last-child {
+  background: var(--score);
+  font-weight: 750;
+}
 td[data-key="ppg"],
 th[data-key="ppg"],
 tbody tr:nth-child(even) td[data-key="ppg"] {

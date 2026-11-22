@@ -60,6 +60,31 @@ def shooting(row, hudl):
     return made2, att2, made3, att3
 
 
+def regular_standings(data):
+    rows = [s for s in data['Standings'] if s['SeasonType'] == 1 and s['LeagueId'] == LEAGUE]
+    require(len(rows) == len(TEAMS) and {s['TeamId'] for s in rows} == TEAMS.keys(),
+            'classement régulier incomplet')
+    return rows
+
+
+def team_standings(data):
+    standings = []
+    for row in regular_standings(data):
+        team_id = row['TeamId']
+        position = count(row, 'Position')
+        require(1 <= position <= len(TEAMS), 'position au classement invalide')
+        average, difference, points = row['AverageFormatted'], row['Diff2Formatted'], row['LeaguePoints']
+        require(all(isinstance(value, str) and math.isfinite(float(value))
+                    for value in (average, difference)), 'moyenne ou écart invalide')
+        require(type(points) in (int, float) and math.isfinite(points), 'points de classement invalides')
+        standings.append(dict(id=team_id, name=TEAMS[team_id], position=position,
+                              games=count(row, 'GamesPlayed'), wins=count(row, 'Wins'),
+                              losses=count(row, 'Losses'), pointsFor=count(row, 'PointsFor'),
+                              pointsAgainst=count(row, 'PointsAgaints'), average=average,
+                              difference=difference, points=points))
+    return sorted(standings, key=lambda row: row['position'])
+
+
 def normalize(team_id, data):
     name = TEAMS[team_id]
     for key, value in {'TeamId': team_id, 'TeamName': name, 'LeagueId': LEAGUE,
@@ -67,9 +92,7 @@ def normalize(team_id, data):
                        'Conference': 'Nord-Est', 'Sector': 'Collégial'}.items():
         require(data[key] == value, f'{key} inattendu')
     require('(2026-2027)' in data['StandingsName'], 'saison inattendue')
-    standings = [s for s in data['Standings'] if s['SeasonType'] == 1 and s['LeagueId'] == LEAGUE]
-    require(len(standings) == len(TEAMS) and {s['TeamId'] for s in standings} == TEAMS.keys(),
-            'classement régulier incomplet')
+    standings = regular_standings(data)
     games = count(next(s for s in standings if s['TeamId'] == team_id), 'GamesPlayed')
     hudl = data['showBasketballStatsHudlMethod']
     require((data['showBasketballStatsStandardMethod'], hudl) in [(True, False), (False, True)],

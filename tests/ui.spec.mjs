@@ -11,10 +11,10 @@ test("le rang du tableau et du CSV suit la statistique triée", async ({ page })
   const twos = page.getByRole("button", { name: "Trier par tirs à deux points réussis" });
   await twos.click();
   await expect(rank).toHaveText("4");
-  await expect(page.locator("tbody tr").nth(4)).toContainText("Isaac Bédard");
+  await expect(page.locator("#body tr").nth(4)).toContainText("Isaac Bédard");
   const gabriel = page.getByRole("row").filter({ hasText: "Gabriel Gauthier" });
   await expect(gabriel.locator('td[data-key="rank"]')).toHaveText("4");
-  await expect(page.locator("tbody tr").nth(5).locator('td[data-key="rank"]')).toHaveText("6");
+  await expect(page.locator("#body tr").nth(5).locator('td[data-key="rank"]')).toHaveText("6");
   await row.getByRole("button").click();
   const stat = page.getByRole("dialog").locator("dl > div").filter({ hasText: "Paniers à 2 points" });
   await expect(stat.locator(".stat-rank")).toHaveText("Rang (4)");
@@ -50,7 +50,7 @@ test("les noms des équipes ouvrent leur fiche RSEQ dans un nouvel onglet", asyn
   await page.goto("/");
   await page.locator(".sources summary").click();
   for (const team of data.teams) {
-    const rowLink = page.locator("tbody").getByRole("link", { name: team.name, exact: true }).first();
+    const rowLink = page.locator("#body").getByRole("link", { name: team.name, exact: true }).first();
     const sourceLink = page.locator("#sources").getByRole("link", { name: team.name + " · " + team.games + " MJ", exact: true });
     for (const link of [rowLink, sourceLink]) {
       await expect(link).toHaveAttribute("href", teamUrl(team.id));
@@ -141,7 +141,7 @@ test("les valeurs et les rangs restent alignés dans la fiche après filtrage", 
 
 test("seul un clic ou un toucher à l’extérieur ferme la fiche", async ({ page, hasTouch }) => {
   await page.goto("/");
-  const player = page.locator("tbody tr").first().getByRole("button");
+  const player = page.locator("#body tr").first().getByRole("button");
   await player.click();
   const dialog = page.getByRole("dialog");
   await dialog.getByRole("heading").click();
@@ -225,7 +225,7 @@ test("classement officiel, sélections, fiche, CSV et défilement", async ({
 }, info) => {
   const data = await (await request.get("/data.json")).json();
   await page.goto("/");
-  const rows = page.locator("tbody tr");
+  const rows = page.locator("#body tr");
   const allPlayers = page.getByRole("button", { name: "Tous", exact: true });
   const teamFilter = page.getByLabel("Filtrer par équipe");
   const lastPlayer = data.players.at(-1);
@@ -267,7 +267,7 @@ test("classement officiel, sélections, fiche, CSV et défilement", async ({
         () => document.documentElement.scrollWidth <= innerWidth,
       ),
     ).toBe(true);
-    const scroll = page.locator(".scroll");
+    const scroll = page.locator("#all-stats .scroll");
     expect(await scroll.evaluate((el) => el.scrollWidth > el.clientWidth)).toBe(
       true,
     );
@@ -365,7 +365,7 @@ test("les liens de vue se copient et la navigation conserve les filtres", async 
   await page.getByLabel("Filtrer par équipe").selectOption(p.teamId);
   await page.getByLabel("Rechercher un joueur").fill(p.name);
   await page.getByRole("button", { name: "Trier par points totaux" }).click();
-  for (const [label, suffix] of [["Statistiques Individuelles", ""], ["Meneurs par catégorie", "#meneurs"]]) {
+  for (const [label, suffix] of [["Statistiques Individuelles", ""], ["Classement", "#classement"], ["Meneurs par catégorie", "#meneurs"]]) {
     const link = page.getByRole("link", { name: label, exact: true });
     await link.focus();
     await page.keyboard.press("Enter");
@@ -381,12 +381,39 @@ test("les liens de vue se copient et la navigation conserve les filtres", async 
   }
   await expect(page.locator("#boards li")).toHaveCount(30);
   await page.goBack();
-  await expect(page.locator("tbody tr")).toHaveCount(1);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Classement des équipes");
+  await page.goBack();
+  await expect(page.locator("#body tr")).toHaveCount(1);
   await expect(page.getByLabel("Rechercher un joueur")).toHaveValue(p.name);
   await expect(page.getByLabel("Filtrer par équipe")).toHaveValue(p.teamId);
   await expect(page.getByRole("button", { name: "Tous", exact: true })).toHaveAttribute("aria-pressed", "true");
   await expect(page.locator('th[data-key="points"]')).toHaveAttribute("aria-sort", "descending");
   await page.goForward();
+  await page.goForward();
   await page.reload({ waitUntil: "domcontentloaded" });
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Meneurs par catégorie");
+});
+
+test("le classement des équipes reprend toutes les colonnes et positions du RSEQ", async ({ page }) => {
+  const { standings } = await (await page.request.get("/data.json")).json();
+  await page.goto("/#classement");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Classement des équipes");
+  await expect(page.getByRole("link", { name: "Classement", exact: true })).toHaveAttribute("aria-current", "page");
+  const table = page.getByRole("table", { name: "Classement des équipes en saison régulière" });
+  const rows = table.locator("tbody tr");
+  await expect(rows).toHaveCount(8);
+  for (const [i, team] of standings.entries()) {
+    await expect(rows.nth(i).getByRole("cell")).toHaveText([
+      team.position, team.name, team.games, team.wins, team.losses, team.pointsFor,
+      team.pointsAgainst, team.average, team.difference, team.points,
+    ].map(String));
+  }
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  const old = JSON.parse(await readFile(new URL("../archives/2026-11.json", import.meta.url)));
+  await page.route("**/data.json", route => route.fulfill({ json: old }));
+  await page.reload();
+  await expect(page.getByRole("status")).toContainText("indisponible pour cette extraction");
+  await expect(table).toBeHidden();
+  await page.getByRole("link", { name: "Statistiques Individuelles" }).click();
+  await expect(page.locator("#body tr")).toHaveCount(old.players.length);
 });

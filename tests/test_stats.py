@@ -28,7 +28,11 @@ def sample(team_id, games=3):
                 Division='D2', SexType='Masculin', Conference='Nord-Est', Sector='Collégial',
                 StandingsName='Test (2026-2027)', showBasketballStatsStandardMethod=True,
                 showBasketballStatsHudlMethod=False, Athletes=[dict(AthleteId=athlete,NumberGamesPlayed=2)],
-                Standings=[dict(TeamId=k, LeagueId=LEAGUE, SeasonType=1, GamesPlayed=games) for k in TEAMS],
+                Standings=[dict(TeamId=k, LeagueId=LEAGUE, SeasonType=1, Position=i,
+                                GamesPlayed=games, Wins=2, Losses=games-2,
+                                PointsFor=153, PointsAgaints=142, AverageFormatted='0.667',
+                                Diff2Formatted='0.0', LeaguePoints=4)
+                           for i, k in enumerate(reversed(TEAMS), 1)],
                 LeagueBasketballStats=[row])
 
 
@@ -95,6 +99,11 @@ class RankingTests(unittest.TestCase):
             result=json.loads(old)
             self.assertEqual(len(result['teams']),8)
             self.assertEqual(len(result['players']),8)
+            self.assertEqual([row['id'] for row in result['standings']], list(reversed(TEAMS)))
+            self.assertEqual(result['standings'][0], dict(
+                id=list(TEAMS)[-1], name=list(TEAMS.values())[-1], position=1, games=3,
+                wins=2, losses=1, pointsFor=153, pointsAgainst=142, average='0.667',
+                difference='0.0', points=4))
             self.assertTrue(all(TEAMS[p['teamId']]==p['team'] for p in result['players']))
             with self.assertRaisesRegex(ValueError,TEAMS[TEAM]):
                 synchronize(path,lambda id: {} if id==TEAM else sample(id))
@@ -102,13 +111,14 @@ class RankingTests(unittest.TestCase):
 
 
     def test_mixed_standings(self):
-        def changing(team_id):
-            data = sample(team_id)
-            if team_id != TEAM:
-                data['Standings'][0]['GamesPlayed'] += 1
-            return data
-        with tempfile.TemporaryDirectory() as folder:
-            dest = Path(folder) / 'data.json'
-            with self.assertRaisesRegex(ValueError, 'pendant la collecte'):
-                synchronize(dest, changing)
-            self.assertFalse(dest.exists())
+        for field in ('GamesPlayed', 'PointsFor'):
+            def changing(team_id):
+                data = sample(team_id)
+                if team_id != TEAM:
+                    data['Standings'][0][field] += 1
+                return data
+            with self.subTest(field=field), tempfile.TemporaryDirectory() as folder:
+                dest = Path(folder) / 'data.json'
+                with self.assertRaisesRegex(ValueError, 'pendant la collecte'):
+                    synchronize(dest, changing)
+                self.assertFalse(dest.exists())

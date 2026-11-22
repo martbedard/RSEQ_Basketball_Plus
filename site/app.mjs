@@ -140,27 +140,34 @@ const updateBoards = groups.map(([title, stats]) => {
   return update;
 });
 
+const views = [
+  { hash: "", section: $("all-stats"), link: $("all-link"), title: "Classement des marqueurs" },
+  { hash: "#meneurs", section: $("leaders-view"), link: $("leaders-link"), title: "Meneurs par catégorie" },
+  { hash: "#classement", section: $("standings-view"), link: $("standings-link"), title: "Classement des équipes" },
+];
+const [playersView, leadersView, standingsView] = views;
+
 function showView() {
-  const leaders = location.hash === "#meneurs";
-  $("all-stats").hidden = leaders;
-  $("leaders-view").hidden = !leaders;
-  $("leader").hidden = leaders || !dataset;
-  $("title").textContent = leaders ? "Meneurs par catégorie" : "Classement des marqueurs";
-  const active = leaders ? $("leaders-link") : $("all-link");
-  const inactive = leaders ? $("all-link") : $("leaders-link");
-  active.setAttribute("aria-current", "page");
-  inactive.removeAttribute("aria-current");
+  const active = views.find(view => view.hash === location.hash) ?? playersView;
+  for (const view of views) {
+    view.section.hidden = view !== active;
+    if (view === active) view.link.setAttribute("aria-current", "page");
+    else view.link.removeAttribute("aria-current");
+  }
+  $("leader").hidden = active !== playersView || !dataset;
+  $("eligible-metric").hidden = active === standingsView;
+  $("title").textContent = active.title;
   $("boards").hidden = !dataset;
   $("leaders-notice").hidden = Boolean(dataset);
   $("copy-feedback").textContent = "";
   $("share-url").hidden = true;
-  if (leaders && dataset) updateBoards.forEach(update => update());
+  if (active === leadersView && dataset) updateBoards.forEach(update => update());
 }
-// Real links also support opening either view in a new tab.
+// Real links also support opening a view in a new tab.
 const base = new URL(location.href);
 base.hash = "";
 $("all-link").href = base.href;
-for (const link of [$("all-link"), $("leaders-link")]) {
+for (const { link } of views) {
   link.addEventListener("click", event => {
     if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) return;
     event.preventDefault();
@@ -187,6 +194,23 @@ $("copy-view").onclick = async () => {
   }
 };
 showView();
+
+function renderStandings(standings) {
+  const rows = standings?.length === dataset.teams.length ? standings : [];
+  $("standings-body").replaceChildren(...rows.map(team => {
+    const row = element("tr");
+    const name = element("td");
+    name.append(teamLink(team.id, team.name));
+    row.append(element("td", team.position), name);
+    for (const key of ["games", "wins", "losses", "pointsFor", "pointsAgainst", "average", "difference", "points"]) {
+      row.append(element("td", team[key]));
+    }
+    return row;
+  }));
+  $("standings-scroll").hidden = !rows.length;
+  $("standings-notice").hidden = Boolean(rows.length);
+  $("standings-notice").textContent = "Le classement des équipes est indisponible pour cette extraction.";
+}
 
 function render() {
   if (!dataset) return;
@@ -323,6 +347,7 @@ async function load() {
       " · " + display("ppg", leader.ppg) + " PTS/MJ",
     );
     render();
+    renderStandings(data.standings);
     showView();
   } catch (error) {
     if (!dataset) {
@@ -333,6 +358,7 @@ async function load() {
           ? "En attente de la première actualisation complète des huit équipes."
           : "Impossible de charger le classement. Une nouvelle tentative aura lieu automatiquement.";
       $("leaders-notice").textContent = $("notice").textContent;
+      $("standings-notice").textContent = $("notice").textContent;
     }
   } finally {
     loading = false;

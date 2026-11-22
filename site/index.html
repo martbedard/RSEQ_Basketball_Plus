@@ -6,11 +6,11 @@
     <meta name="theme-color" content="#132f2b" />
     <meta
       name="description"
-      content="Classement des marqueurs du basketball collégial masculin D2 du RSEQ, conférence Nord-Est, saison 2026-2027."
+      content="Classement des équipes et statistiques individuelles du basketball collégial masculin D2 du RSEQ, conférence Nord-Est, saison 2026-2027."
     />
     <title>RSEQ Basketball D2 - M - Nord Est</title>
-    <link rel="stylesheet" href="./style.css?v=0be31d4f" />
-    <script type="module" src="./app.mjs?v=c2b4e923"></script>
+    <link rel="stylesheet" href="./style.css?v=classement-equipes" />
+    <script type="module" src="./app.mjs?v=classement-equipes"></script>
   </head>
   <body>
     <header>
@@ -41,12 +41,13 @@
       </section>
       <div class="metrics">
         <div><strong id="teams">—</strong> équipes intégrées</div>
-        <div><strong id="eligible">—</strong> joueurs admissibles</div>
+        <div id="eligible-metric"><strong id="eligible">—</strong> joueurs admissibles</div>
       </div>
       <div class="view-toolbar">
         <nav aria-label="Vue des statistiques">
           <a id="all-link" href="./" aria-current="page">Statistiques Individuelles</a>
           <a id="leaders-link" href="#meneurs">Meneurs par catégorie</a>
+          <a id="standings-link" href="#classement">Classement</a>
         </nav>
         <button id="copy-view" type="button">Copier le lien</button>
         <span id="copy-feedback" aria-live="polite"></span>
@@ -104,6 +105,34 @@
       <section id="leaders-view" aria-label="Meneurs par catégorie" hidden>
         <p class="notice" role="status" id="leaders-notice">Chargement du classement…</p>
         <div class="leaderboards" id="boards"></div>
+      </section>
+      <section id="standings-view" class="ranking" aria-label="Classement des équipes" hidden>
+        <p class="notice" role="status" id="standings-notice">Chargement du classement…</p>
+        <div id="standings-scroll" class="scroll" tabindex="0" role="region"
+          aria-label="Tableau des équipes, défilement horizontal" hidden>
+          <table aria-label="Classement des équipes en saison régulière">
+            <thead>
+              <tr>
+                <th scope="col">Pos</th>
+                <th scope="col">Équipe</th>
+                <th scope="col"><abbr title="Matchs joués">MJ</abbr></th>
+                <th scope="col"><abbr title="Victoires">V</abbr></th>
+                <th scope="col"><abbr title="Défaites">D</abbr></th>
+                <th scope="col"><abbr title="Points pour">PP</abbr></th>
+                <th scope="col"><abbr title="Points contre">PC</abbr></th>
+                <th scope="col"><abbr title="Moyenne de victoires">MOY</abbr></th>
+                <th scope="col"><abbr title="Écart en matchs">Diff.</abbr></th>
+                <th scope="col"><abbr title="Points de classement">PTS</abbr></th>
+              </tr>
+            </thead>
+            <tbody id="standings-body"></tbody>
+          </table>
+        </div>
+        <div class="footnote">
+          <span>Saison régulière · QCA-EDQ-SLSJ</span>
+          <a href="https://diffusion.rseq.ca/?LeagueId=3b9e2e05-e4d7-44ae-8720-5a3b6ee601a9&amp;Type=League"
+            target="_blank" rel="noopener">Classement officiel du RSEQ</a>
+        </div>
       </section>
       <details class="sources">
         <summary>Sources et méthode de classement</summary>
