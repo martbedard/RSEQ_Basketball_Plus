@@ -1,6 +1,37 @@
 import { test, expect } from "@playwright/test";
 import { readFile } from "node:fs/promises";
 
+test("les logos locaux chargent dans chaque vue et dans la fiche", async ({ page }) => {
+  await page.goto("/");
+  await expect(page.locator("#standings-body tr")).toHaveCount(8);
+  async function checkLogos(selector) {
+    const names = page.locator(selector);
+    expect(await names.count()).toBeGreaterThan(0);
+    for (const name of await names.all()) {
+      const logo = name.locator("img.team-logo");
+      await expect(logo).toHaveCount(1);
+      await expect(logo).toHaveAttribute("alt", "");
+      await expect(logo).toHaveAttribute("src", /^\.\/logos\//);
+      await expect.poll(() => logo.evaluate(img => img.complete && img.naturalWidth > 0)).toBe(true);
+      expect((await logo.boundingBox()).width).toBeLessThanOrEqual(24);
+    }
+  }
+  await checkLogos("#standings-body .team-name");
+  await page.locator("#schedule-link").click();
+  await checkLogos("#schedule-view .team-name");
+  await page.locator("#all-link").click();
+  await checkLogos("#body .team-name");
+  await checkLogos("#leader .team-name");
+  await page.locator(".sources summary").click();
+  await checkLogos("#sources .team-name");
+  await page.locator("#body tr").first().getByRole("button").click();
+  await checkLogos("#profile-team .team-name");
+  await page.getByRole("button", { name: "Fermer la fiche" }).click();
+  await page.locator("#leaders-link").click();
+  await checkLogos("#boards .team-name");
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
 test("le rang du tableau et du CSV suit la statistique triée", async ({ page }) => {
   const data = JSON.parse(await readFile(new URL("../archives/2026-11.json", import.meta.url), "utf8"));
   await page.route("**/data.json", route => route.fulfill({ json: data }));
@@ -208,14 +239,14 @@ test("portrait à l’ouverture, changement de joueur et photo indisponible", as
 
   await page.getByRole("button", { name: "Yohann Keenania Zabavy" }).click();
   await expect(dialog.getByRole("heading")).toHaveText("Yohann Keenania Zabavy");
-  await expect(dialog.locator("img")).toHaveCount(0);
+  await expect(dialog.locator("#profile-portrait img")).toHaveCount(0);
   await expect(dialog).toContainText("Points par match");
   await dialog.getByRole("button", { name: "Fermer la fiche" }).click();
 
   const failed = page.waitForEvent("requestfailed", (req) => req.url().includes("csm_bolduc_alexis_"));
   await page.getByRole("button", { name: "Alexis Bolduc" }).click();
   await failed;
-  await expect(dialog.locator("img")).toBeHidden();
+  await expect(dialog.locator("#profile-portrait img")).toBeHidden();
   await expect(dialog).toContainText("Points par match");
 });
 
@@ -343,7 +374,7 @@ test("les sept classements par catégorie et les fiches utilisent les données d
   await expect(isaac.locator(".board-avatar img")).toHaveCount(0);
   await expect(isaac.locator(".board-avatar")).toHaveText("IB");
   const first = baskets.locator(".board-row").first();
-  await expect.poll(() => first.locator("img").evaluate(img => img.naturalWidth)).toBeGreaterThan(0);
+  await expect.poll(() => first.locator(".board-avatar img").evaluate(img => img.naturalWidth)).toBeGreaterThan(0);
   await first.click();
   await expect(page.getByRole("dialog")).toContainText("Christ-Ariel Oulaï");
   await page.getByRole("button", { name: "Fermer la fiche" }).click();

@@ -1,5 +1,6 @@
 import { columns, display, profileStats, profileRanks, categoryLeaders, selectRows, tableValue, csv } from "./model.mjs?v=points-par-match";
 import { portraits } from "./portraits.mjs";
+import { teamLogos } from "./teams.mjs";
 const $ = (id) => document.getElementById(id);
 const profileDialog = $("profile");
 const state = { limit: "all", search: "", team: "", key: "ppg", direction: -1 };
@@ -32,8 +33,24 @@ function element(tag, text) {
   if (text != null) node.textContent = text;
   return node;
 }
+function teamName(id, name, tag = "span") {
+  const node = element(tag);
+  node.className = "team-name";
+  if (teamLogos[id]) {
+    const logo = element("img");
+    logo.className = "team-logo";
+    logo.alt = "";
+    logo.width = 24;
+    logo.height = 24;
+    logo.src = teamLogos[id];
+    logo.onerror = () => logo.remove();
+    node.append(logo);
+  }
+  node.append(document.createTextNode(name));
+  return node;
+}
 function teamLink(id, name) {
-  const link = element("a", name);
+  const link = teamName(id, name, "a");
   link.href = "https://diffusion.rseq.ca/Default?Type=Team&TeamId=" + encodeURIComponent(id);
   link.target = "_blank";
   link.rel = "noopener";
@@ -109,7 +126,7 @@ function leaderEntry({ player, rank }, key) {
   }
   const identity = element("span");
   identity.className = "board-player";
-  identity.append(element("strong", player.name), element("small", player.team));
+  identity.append(element("strong", player.name), teamName(player.teamId, player.team, "small"));
   const value = element("span", display(key, player[key]));
   value.className = "board-value";
   if (key === "pctft") value.append(" %", element("small", player.ft + "/" + player.fta));

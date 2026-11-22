@@ -394,6 +394,20 @@ h1 {
   object-fit: cover;
   object-position: center top;
 }
+.team-name {
+  display: inline-flex;
+  align-items: center;
+  gap: .4rem;
+  vertical-align: middle;
+}
+.team-logo {
+  flex: 0 0 auto;
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  background: #fff;
+  border-radius: 3px;
+}
 .board-player { overflow-wrap: anywhere; font-size: .9rem; line-height: 1.2; }
 .board-row small {
   display: block;
@@ -405,6 +419,8 @@ h1 {
   white-space: nowrap;
   font: 700 1.3rem "Barlow Condensed", sans-serif;
 }
+.board-row small.team-name { display: flex; margin-top: .2rem; }
+.board-player .team-logo { width: 20px; height: 20px; }
 .leaderboards li:first-child .board-row {
   min-height: 5rem;
   background: var(--score);
