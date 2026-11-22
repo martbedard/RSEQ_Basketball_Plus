@@ -593,6 +593,29 @@ td:first-child {
   text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
 }
 @media (max-width: 720px) {
+  #standings-modes {
+    display: grid;
+    grid-template-columns: .7fr 1.15fr 1.15fr;
+    gap: 0.2rem;
+    margin-bottom: 0.55rem;
+    padding: 0.2rem;
+    border: 1px solid var(--line);
+    border-radius: 0.55rem;
+    background: var(--paper);
+  }
+  #standings-modes button {
+    min-height: 44px;
+    padding: 0.25rem;
+    border: 0;
+    background: transparent;
+    color: var(--muted);
+    font-size: 0.76rem;
+    font-weight: 650;
+  }
+  #standings-modes [aria-pressed="true"] {
+    background: var(--score);
+    color: var(--ink);
+  }
   #standings-scroll {
     --pin: 3.4rem;
   }
@@ -613,6 +636,33 @@ td:first-child {
   }
   #standings-head [data-key$="PerGame"] {
     width: 5.5rem;
+  }
+  #standings-scroll:not([data-layout="full"]) {
+    --pin: 2.75rem;
+  }
+  #standings-scroll:not([data-layout="full"]) table {
+    min-width: 0;
+  }
+  #standings-scroll:not([data-layout="full"]) :is(th, td) {
+    position: static;
+    padding-inline: 0.35rem;
+  }
+  #standings-scroll:not([data-layout="full"]) :is(th, td)[data-key="name"] {
+    width: auto;
+    min-width: 0;
+    box-shadow: none;
+  }
+  #standings-scroll:not([data-layout="full"]) td {
+    padding-block: 0.55rem;
+  }
+  #standings-scroll[data-layout="record"] th:nth-child(n + 3) {
+    width: 11%;
+  }
+  #standings-scroll[data-layout="rates"] th[data-key$="PerGame"] {
+    width: 24%;
+  }
+  #standings-view .standings-conference {
+    display: none;
   }
 }
 #schedule-months {
@@ -823,6 +873,77 @@ dialog h2 {
     gap: 0.8rem;
     padding: 1.25rem;
   }
+  main:has(#standings-view:not([hidden])) .hero {
+    min-height: 0;
+    margin-top: 0.75rem;
+    padding: 0.85rem 0.8rem;
+    flex-wrap: nowrap;
+  }
+  main:has(#standings-view:not([hidden])) .hero-copy {
+    display: flex;
+    flex-direction: column;
+  }
+  main:has(#standings-view:not([hidden])) :is(.hero-copy .overline, .metrics) {
+    display: none;
+  }
+  main:has(#standings-view:not([hidden])) .hero-copy h1 {
+    margin: 0.15rem 0 0;
+    font-size: clamp(1.65rem, 6vw, 2.25rem);
+  }
+  main:has(#standings-view:not([hidden])) .hero-copy .subtitle {
+    order: -1;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+  }
+  .hero #copy-view {
+    position: relative;
+    order: 1;
+    flex: 0 0 44px;
+    min-height: 44px;
+    padding: 0;
+    border-color: #739487;
+    background: transparent;
+  }
+  .hero #copy-view span {
+    display: none;
+  }
+  .hero #copy-view::before,
+  .hero #copy-view::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 11px;
+    height: 7px;
+    border: 1.5px solid currentColor;
+    border-radius: 5px;
+    transform: translate(-75%, -70%) rotate(-38deg);
+  }
+  .hero #copy-view::after {
+    transform: translate(-25%, -30%) rotate(-38deg);
+  }
+  .view-toolbar {
+    margin-top: 0.3rem;
+  }
+  .view-toolbar nav {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+    gap: 0 0.55rem;
+  }
+  .view-toolbar nav a {
+    display: flex;
+    align-items: center;
+    width: fit-content;
+    min-height: 44px;
+    padding-block: 0.25rem;
+    font-size: 0.8rem;
+  }
+  .view-actions:not(:has(button:not([hidden]))) {
+    display: none;
+  }
   .leader {
     min-width: 0;
     padding: 0.35rem 0.6rem;
@@ -880,6 +1001,20 @@ dialog h2 {
   }
   .scroll {
     --pin: 3rem;
+  }
+}
+@media (max-width: 360px) {
+  .bar {
+    gap: 0.65rem;
+  }
+  .brand {
+    gap: 0.45rem;
+    font-size: 0.86rem;
+    white-space: nowrap;
+  }
+  .official {
+    font-size: 0.69rem;
+    white-space: nowrap;
   }
 }
 @media (prefers-color-scheme: dark) {

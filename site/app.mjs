@@ -164,6 +164,15 @@ const views = [
 ];
 const [standingsView, scheduleView, playersView, leadersView] = views;
 const scheduleToday = $("schedule-today");
+const standingsPhone = matchMedia("(max-width: 720px)");
+const copyButton = $("copy-view");
+const hero = document.querySelector(".hero");
+const viewActions = document.querySelector(".view-actions");
+
+function placeCopyButton() {
+  const container = standingsPhone.matches && !standingsView.section.hidden ? hero : viewActions;
+  if (copyButton.parentElement !== container) container.prepend(copyButton);
+}
 
 function showView() {
   const active = views.find(view => view.hash === location.hash) ?? standingsView;
@@ -180,6 +189,7 @@ function showView() {
   $("leaders-notice").hidden = Boolean(dataset);
   $("copy-feedback").textContent = "";
   $("share-url").hidden = true;
+  placeCopyButton();
   if (active === leadersView && dataset) updateBoards.forEach(update => update());
 }
 // Real links also support opening a view in a new tab.
@@ -192,7 +202,7 @@ for (const { link } of views) {
   });
 }
 window.addEventListener("hashchange", showView);
-$("copy-view").onclick = async () => {
+copyButton.onclick = async () => {
   const url = document.querySelector('.view-toolbar [aria-current="page"]').href;
   try {
     await navigator.clipboard.writeText(url);
@@ -234,6 +244,28 @@ showView();
 
 const standingsHeaders = [...$("standings-head").children];
 const standingsSort = { key: "position", direction: 1 };
+const standingsScroll = $("standings-scroll");
+const standingsModes = $("standings-modes");
+const standingsModeButtons = [...standingsModes.children];
+const compactStandingsColumns = {
+  record: ["position", "name", "games", "wins", "losses", "points"],
+  rates: ["position", "name", "pointsForPerGame", "pointsAgainstPerGame"],
+};
+let standingsMode = "record";
+
+for (const button of standingsModeButtons) {
+  button.onclick = () => {
+    standingsMode = button.dataset.mode;
+    standingsScroll.scrollLeft = 0;
+    renderStandings();
+  };
+}
+standingsPhone.addEventListener("change", () => {
+  placeCopyButton();
+  standingsScroll.scrollLeft = 0;
+  if (dataset) renderStandings();
+});
+
 for (const header of standingsHeaders) {
   const { key } = header.dataset;
   header.firstElementChild.onclick = () => {
@@ -246,6 +278,12 @@ for (const header of standingsHeaders) {
 
 function renderStandings() {
   const { standings, teams } = dataset;
+  const layout = standingsPhone.matches ? standingsMode : "full";
+  const compactColumns = compactStandingsColumns[layout];
+  if (compactColumns && !compactColumns.includes(standingsSort.key)) {
+    standingsSort.key = "position";
+    standingsSort.direction = 1;
+  }
   const { key, direction } = standingsSort;
   const rows = standings?.length === teams.length ? standings.map(team => ({
     ...team,
@@ -259,16 +297,19 @@ function renderStandings() {
     const order = key === "name" ? a.name.localeCompare(b.name, "fr-CA") : a[key] - b[key];
     return direction * order || a.position - b.position;
   });
+  const visibleHeaders = [];
   for (const header of standingsHeaders) {
+    header.hidden = Boolean(compactColumns && !compactColumns.includes(header.dataset.key));
     if (header.dataset.key === key) {
       header.setAttribute("aria-sort", direction === 1 ? "ascending" : "descending");
     } else {
       header.removeAttribute("aria-sort");
     }
+    if (!header.hidden) visibleHeaders.push(header);
   }
   $("standings-body").replaceChildren(...rows.map(team => {
     const row = element("tr");
-    for (const header of standingsHeaders) {
+    for (const header of visibleHeaders) {
       const columnKey = header.dataset.key;
       const cell = element("td");
       cell.dataset.key = columnKey;
@@ -279,7 +320,15 @@ function renderStandings() {
     }
     return row;
   }));
-  $("standings-scroll").hidden = !rows.length;
+  for (const button of standingsModeButtons) {
+    button.setAttribute("aria-pressed", String(button.dataset.mode === standingsMode));
+  }
+  standingsModes.hidden = !standingsPhone.matches || !rows.length;
+  standingsScroll.dataset.layout = layout;
+  standingsScroll.tabIndex = layout === "full" ? 0 : -1;
+  standingsScroll.setAttribute("aria-label", layout === "full"
+    ? "Tableau des équipes, défilement horizontal" : "Tableau des équipes");
+  standingsScroll.hidden = !rows.length;
   $("standings-notice").hidden = Boolean(rows.length);
   $("standings-notice").textContent = "Le classement des équipes est indisponible pour cette extraction.";
 }

@@ -403,6 +403,29 @@ test("le classement affiche les résultats du RSEQ et les points par match", asy
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Classement des équipes");
   await expect(page.getByRole("link", { name: "Classement", exact: true })).toHaveAttribute("aria-current", "page");
   const table = page.getByRole("table", { name: "Classement des équipes en saison régulière" });
+  const modes = page.getByRole("group", { name: "Colonnes du classement" });
+  if (page.viewportSize().width <= 720) {
+    const bilan = modes.getByRole("button", { name: "Bilan" });
+    await expect(bilan).toHaveAttribute("aria-pressed", "true");
+    await expect(table.getByRole("columnheader")).toHaveText(["Pos", "Équipe", "MJ", "V", "D", "PTS"]);
+    expect(await table.evaluate(element => element.parentElement.scrollWidth)).toBe(
+      await table.evaluate(element => element.parentElement.clientWidth),
+    );
+    await expect(page.locator(".hero").getByRole("button", { name: "Copier le lien" })).toBeVisible();
+    await modes.getByRole("button", { name: "Points par match" }).click();
+    await expect(table.getByRole("columnheader")).toHaveText(["Pos", "Équipe", "PP/Match", "PC/Match"]);
+    expect(await table.evaluate(element => element.parentElement.scrollWidth)).toBe(
+      await table.evaluate(element => element.parentElement.clientWidth),
+    );
+    const pointsAgainstRate = table.getByRole("columnheader", { name: /^PC\/Match/ });
+    await pointsAgainstRate.getByRole("button").click();
+    await expect(pointsAgainstRate).toHaveAttribute("aria-sort", "descending");
+    await bilan.click();
+    await expect(table.locator('th[data-key="position"]')).toHaveAttribute("aria-sort", "ascending");
+    await modes.getByRole("button", { name: "Tableau complet" }).click();
+  } else {
+    await expect(modes).toBeHidden();
+  }
   await expect(table.getByRole("columnheader")).toHaveText([
     "Pos", "Équipe", "MJ", "V", "D", "PP", "PP/Match", "PC", "PC/Match", "Moy", "Diff", "PTS",
   ]);
@@ -530,6 +553,9 @@ test("les colonnes du classement se trient dans les deux sens", async ({ page })
   Object.assign(teamWithoutGames, { games: 0, wins: 0, losses: 0, pointsFor: 0, pointsAgainst: 0 });
   await page.route("**/data.json", route => route.fulfill({ json: data }));
   await page.goto("/");
+  if (page.viewportSize().width <= 720) {
+    await page.getByRole("button", { name: "Tableau complet" }).click();
+  }
   await expect(page.locator("#standings-body tr:last-child td").filter({ hasText: /^—$/ })).toHaveCount(2);
   const positions = page.locator("#standings-body td:first-child");
   const table = page.locator("#standings-scroll table");
