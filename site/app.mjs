@@ -192,15 +192,41 @@ $("copy-view").onclick = async () => {
 };
 showView();
 
-function renderStandings(standings) {
-  const rows = standings?.length === dataset.teams.length ? standings : [];
+const standingsHeaders = [...$("standings-head").children];
+const standingsSort = { key: "position", direction: 1 };
+for (const header of standingsHeaders) {
+  const { key } = header.dataset;
+  header.firstElementChild.onclick = () => {
+    if (standingsSort.key === key) standingsSort.direction *= -1;
+    else standingsSort.direction = key === "position" || key === "name" ? 1 : -1;
+    standingsSort.key = key;
+    renderStandings();
+  };
+}
+
+function renderStandings() {
+  const { standings, teams } = dataset;
+  const { key, direction } = standingsSort;
+  const rows = standings?.length === teams.length ? [...standings] : [];
+  rows.sort((a, b) => {
+    const order = key === "name" ? a.name.localeCompare(b.name, "fr-CA") : a[key] - b[key];
+    return direction * order || a.position - b.position;
+  });
+  for (const header of standingsHeaders) {
+    if (header.dataset.key === key) {
+      header.setAttribute("aria-sort", direction === 1 ? "ascending" : "descending");
+    } else {
+      header.removeAttribute("aria-sort");
+    }
+  }
   $("standings-body").replaceChildren(...rows.map(team => {
     const row = element("tr");
-    const name = element("td");
-    name.append(teamLink(team.id, team.name));
-    row.append(element("td", team.position), name);
-    for (const key of ["games", "wins", "losses", "pointsFor", "pointsAgainst", "average", "difference", "points"]) {
-      row.append(element("td", team[key]));
+    for (const header of standingsHeaders) {
+      const { key } = header.dataset;
+      const cell = element("td");
+      if (key === "name") cell.append(teamLink(team.id, team.name));
+      else cell.textContent = team[key];
+      row.append(cell);
     }
     return row;
   }));
@@ -344,7 +370,7 @@ async function load() {
       " · " + display("ppg", leader.ppg) + " PTS/MJ",
     );
     render();
-    renderStandings(data.standings);
+    renderStandings();
     showView();
   } catch (error) {
     if (!dataset) {

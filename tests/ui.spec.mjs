@@ -387,7 +387,7 @@ test("les liens de vue se copient et la navigation conserve les filtres", async 
   await expect(page.getByLabel("Rechercher un joueur")).toHaveValue(p.name);
   await expect(page.getByLabel("Filtrer par équipe")).toHaveValue(p.teamId);
   await expect(page.getByRole("button", { name: "Tous", exact: true })).toHaveAttribute("aria-pressed", "true");
-  await expect(page.locator('th[data-key="points"]')).toHaveAttribute("aria-sort", "descending");
+  await expect(page.locator('#head th[data-key="points"]')).toHaveAttribute("aria-sort", "descending");
   await page.goForward();
   await page.goForward();
   await page.reload({ waitUntil: "domcontentloaded" });
@@ -405,6 +405,7 @@ test("le classement des équipes reprend toutes les colonnes et positions du RSE
   const table = page.getByRole("table", { name: "Classement des équipes en saison régulière" });
   const rows = table.locator("tbody tr");
   await expect(rows).toHaveCount(8);
+  await expect(table.locator('th[data-key="position"]')).toHaveAttribute("aria-sort", "ascending");
   for (const [i, team] of standings.entries()) {
     await expect(rows.nth(i).getByRole("cell")).toHaveText([
       team.position, team.name, team.games, team.wins, team.losses, team.pointsFor,
@@ -419,4 +420,30 @@ test("le classement des équipes reprend toutes les colonnes et positions du RSE
   await expect(table).toBeHidden();
   await page.getByRole("link", { name: "Statistiques Individuelles" }).click();
   await expect(page.locator("#body tr")).toHaveCount(old.players.length);
+});
+
+test("les dix colonnes du classement se trient dans les deux sens", async ({ page }) => {
+  const { standings } = await (await page.request.get("/data.json")).json();
+  await page.goto("/");
+  const positions = page.locator("#standings-body td:first-child");
+  const keys = ["position", "name", "games", "wins", "losses", "pointsFor",
+    "pointsAgainst", "average", "difference", "points"];
+  for (const key of keys) {
+    const header = page.locator(`#standings-head th[data-key="${key}"]`);
+    const button = header.getByRole("button");
+    const directions = key === "name" ? [1, -1] : [-1, 1];
+    for (const direction of directions) {
+      if (key === "position") await button.press("Enter");
+      else await button.click();
+      await expect(header).toHaveAttribute("aria-sort", direction === 1 ? "ascending" : "descending");
+      await expect(page.locator("#standings-head [aria-sort]")).toHaveCount(1);
+      const expected = [...standings].sort((a, b) => {
+        const order = key === "name" ? a.name.localeCompare(b.name, "fr-CA") : Number(a[key]) - Number(b[key]);
+        return direction * order || a.position - b.position;
+      });
+      await expect(positions).toHaveText(expected.map(team => String(team.position)));
+    }
+  }
+  await page.reload();
+  await expect(positions).toHaveText(standings.map(team => String(team.position)));
 });

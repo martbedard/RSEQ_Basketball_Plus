@@ -514,6 +514,30 @@ td:first-child {
   font-weight: 700;
   color: var(--muted);
 }
+#standings-head th {
+  padding-block: 0;
+}
+#standings-head button {
+  width: 100%;
+  min-height: 44px;
+  text-align: inherit;
+}
+#standings-head button:focus-visible {
+  outline-offset: -3px;
+}
+#standings-head button::after {
+  content: "↕" / "";
+  display: inline-block;
+  width: 0.85em;
+  margin-inline-start: 0.15em;
+  text-align: center;
+}
+#standings-head [aria-sort="ascending"] button::after {
+  content: "↑" / "";
+}
+#standings-head [aria-sort="descending"] button::after {
+  content: "↓" / "";
+}
 #standings-view :is(th, td):nth-child(3) {
   text-align: right;
 }

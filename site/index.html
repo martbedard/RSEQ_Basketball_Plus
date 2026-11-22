@@ -9,8 +9,8 @@
       content="Classement des équipes et statistiques individuelles du basketball collégial masculin D2 du RSEQ, conférence Nord-Est, saison 2026-2027."
     />
     <title>RSEQ Basketball D2 - M - Nord Est</title>
-    <link rel="stylesheet" href="./style.css?v=classement-equipes" />
-    <script type="module" src="./app.mjs?v=classement-accueil"></script>
+    <link rel="stylesheet" href="./style.css?v=classement-tri" />
+    <script type="module" src="./app.mjs?v=classement-tri"></script>
   </head>
   <body>
     <header>
@@ -112,17 +112,17 @@
           aria-label="Tableau des équipes, défilement horizontal" hidden>
           <table aria-label="Classement des équipes en saison régulière">
             <thead>
-              <tr>
-                <th scope="col">Pos</th>
-                <th scope="col">Équipe</th>
-                <th scope="col"><abbr title="Matchs joués">MJ</abbr></th>
-                <th scope="col"><abbr title="Victoires">V</abbr></th>
-                <th scope="col"><abbr title="Défaites">D</abbr></th>
-                <th scope="col"><abbr title="Points pour">PP</abbr></th>
-                <th scope="col"><abbr title="Points contre">PC</abbr></th>
-                <th scope="col"><abbr title="Moyenne de victoires">MOY</abbr></th>
-                <th scope="col"><abbr title="Écart en matchs">Diff.</abbr></th>
-                <th scope="col"><abbr title="Points de classement">PTS</abbr></th>
+              <tr id="standings-head">
+                <th scope="col" data-key="position" aria-sort="ascending"><button type="button" aria-label="Pos · Trier par position">Pos</button></th>
+                <th scope="col" data-key="name"><button type="button" aria-label="Équipe · Trier par nom d’équipe">Équipe</button></th>
+                <th scope="col" data-key="games"><button type="button" aria-label="MJ · Trier par matchs joués"><abbr title="Matchs joués">MJ</abbr></button></th>
+                <th scope="col" data-key="wins"><button type="button" aria-label="V · Trier par victoires"><abbr title="Victoires">V</abbr></button></th>
+                <th scope="col" data-key="losses"><button type="button" aria-label="D · Trier par défaites"><abbr title="Défaites">D</abbr></button></th>
+                <th scope="col" data-key="pointsFor"><button type="button" aria-label="PP · Trier par points pour"><abbr title="Points pour">PP</abbr></button></th>
+                <th scope="col" data-key="pointsAgainst"><button type="button" aria-label="PC · Trier par points contre"><abbr title="Points contre">PC</abbr></button></th>
+                <th scope="col" data-key="average"><button type="button" aria-label="MOY · Trier par moyenne de victoires"><abbr title="Moyenne de victoires">MOY</abbr></button></th>
+                <th scope="col" data-key="difference"><button type="button" aria-label="Diff. · Trier par écart en matchs"><abbr title="Écart en matchs">Diff.</abbr></button></th>
+                <th scope="col" data-key="points"><button type="button" aria-label="PTS · Trier par points de classement"><abbr title="Points de classement">PTS</abbr></button></th>
               </tr>
             </thead>
             <tbody id="standings-body"></tbody>
