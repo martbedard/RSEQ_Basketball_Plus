@@ -398,7 +398,7 @@ test("le classement des équipes reprend toutes les colonnes et positions du RSE
   const { standings } = await (await page.request.get("/data.json")).json();
   await page.goto("/");
   await expect(page.getByRole("navigation", { name: "Vue des statistiques" }).getByRole("link")).toHaveText([
-    "Classement", "Statistiques Individuelles", "Meneurs par catégorie",
+    "Classement", "Calendrier", "Statistiques Individuelles", "Meneurs par catégorie",
   ]);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Classement des équipes");
   await expect(page.getByRole("link", { name: "Classement", exact: true })).toHaveAttribute("aria-current", "page");
@@ -420,6 +420,37 @@ test("le classement des équipes reprend toutes les colonnes et positions du RSE
   await expect(table).toBeHidden();
   await page.getByRole("link", { name: "Statistiques Individuelles" }).click();
   await expect(page.locator("#body tr")).toHaveCount(old.players.length);
+});
+
+test("le calendrier partage les matchs et résultats de la saison régulière", async ({ page }) => {
+  const data = await (await page.request.get("/data.json")).json();
+  await page.goto("/");
+  await page.getByRole("link", { name: "Calendrier", exact: true }).click();
+  await expect(page).toHaveURL(/#calendrier$/);
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Calendrier");
+  await expect(page.getByRole("link", { name: "Calendrier", exact: true })).toHaveAttribute("aria-current", "page");
+  const table = page.getByRole("table", { name: "Calendrier de la saison régulière" });
+  const rows = table.locator("tbody tr");
+  expect(data.games.length).toBeGreaterThan(0);
+  await expect(rows).toHaveCount(data.games.length);
+  const dates = (await table.locator("time").evaluateAll(nodes => nodes.map(node => node.dateTime)));
+  expect(dates).toEqual([...dates].sort());
+  const scored = data.games.findIndex(game => game.score);
+  const game = data.games[scored];
+  const names = new Map(data.teams.map(team => [team.id, team.name]));
+  const cells = rows.nth(scored).getByRole("cell");
+  await expect(cells.nth(0)).toContainText(game.venue);
+  await expect(cells.nth(1)).toHaveText(names.get(game.visitor));
+  await expect(cells.nth(2)).toHaveText(names.get(game.home));
+  await expect(cells.nth(3).getByRole("link", { name: game.score.join(" – ") }))
+    .toHaveAttribute("href", `https://diffusion.rseq.ca/Default.aspx?Type=Game&GameId=${game.id}`);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.reload();
+  await expect(rows).toHaveCount(data.games.length);
+  const { games, ...old } = data;
+  await page.route("**/data.json", route => route.fulfill({ json: old }));
+  await page.reload();
+  await expect(page.getByRole("status")).toContainText("Le calendrier est indisponible");
 });
 
 test("les dix colonnes du classement se trient dans les deux sens", async ({ page }) => {

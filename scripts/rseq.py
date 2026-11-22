@@ -2,6 +2,7 @@
 import json
 import math
 import time
+from datetime import date, time as clock_time
 from fractions import Fraction
 from pathlib import Path
 from urllib.error import URLError
@@ -83,6 +84,30 @@ def team_standings(data):
                               pointsAgainst=count(row, 'PointsAgaints'), average=average,
                               difference=difference, points=points))
     return sorted(standings, key=lambda row: row['position'])
+
+
+def team_schedule(team_id, data):
+    games = {}
+    for row in data['TeamGames']:
+        if (row['LeagueId'] != LEAGUE or row['SeasonType'] != 1
+                or not row['IsReleased'] or row['IsDeleted'] or row['IsByeWeek']):
+            continue
+        game_id = str(UUID(row['GameId']))
+        visitor, home = row['VisitingTeamId'], row['HomeTeamId']
+        require(visitor in TEAMS and home in TEAMS and visitor != home
+                and team_id in (visitor, home) and game_id not in games,
+                'match du calendrier mal associé ou en double')
+        day, start = row['GameDateFormatted'], row['GameTimeFormatted']
+        cancelled = row['IsCancelledAfterTeamWithdraw']
+        score = None
+        if not cancelled and not row['IsPartialResults'] and row['IsSubmittedForStandings']:
+            score = [count(row, 'VisitingTeamScore'), count(row, 'HomeTeamScore')]
+        games[game_id] = dict(id=game_id, visitor=visitor, home=home,
+                              date=date.fromisoformat(day).isoformat() if day else None,
+                              time=clock_time.fromisoformat(start).isoformat(timespec='minutes') if start else None,
+                              venue=row['GameLocationFormatted'].strip(), score=score,
+                              cancelled=cancelled)
+    return games
 
 
 def normalize(team_id, data):

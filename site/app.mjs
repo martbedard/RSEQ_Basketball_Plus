@@ -11,6 +11,11 @@ const dates = new Intl.DateTimeFormat("fr-CA", {
   dateStyle: "medium",
   timeStyle: "short",
 });
+const gameDates = new Intl.DateTimeFormat("fr-CA", {
+  timeZone: "UTC",
+  day: "numeric",
+  month: "short",
+});
 function element(tag, text) {
   const node = document.createElement(tag);
   if (text != null) node.textContent = text;
@@ -142,10 +147,11 @@ const updateBoards = groups.map(([title, stats]) => {
 
 const views = [
   { hash: "#classement", section: $("standings-view"), link: $("standings-link"), title: "Classement des équipes" },
+  { hash: "#calendrier", section: $("schedule-view"), link: $("schedule-link"), title: "Calendrier" },
   { hash: "#statistiques", section: $("all-stats"), link: $("all-link"), title: "Classement des marqueurs" },
   { hash: "#meneurs", section: $("leaders-view"), link: $("leaders-link"), title: "Meneurs par catégorie" },
 ];
-const [standingsView, playersView, leadersView] = views;
+const [standingsView, , playersView, leadersView] = views;
 
 function showView() {
   const active = views.find(view => view.hash === location.hash) ?? standingsView;
@@ -155,7 +161,7 @@ function showView() {
     else view.link.removeAttribute("aria-current");
   }
   $("leader").hidden = active !== playersView || !dataset;
-  $("eligible-metric").hidden = active === standingsView;
+  $("eligible-metric").hidden = active !== playersView && active !== leadersView;
   $("title").textContent = active.title;
   $("boards").hidden = !dataset;
   $("leaders-notice").hidden = Boolean(dataset);
@@ -233,6 +239,46 @@ function renderStandings() {
   $("standings-scroll").hidden = !rows.length;
   $("standings-notice").hidden = Boolean(rows.length);
   $("standings-notice").textContent = "Le classement des équipes est indisponible pour cette extraction.";
+}
+
+function renderSchedule(teams) {
+  const { games } = dataset;
+  const names = new Map(teams.map(team => [team.id, team.name]));
+  $("schedule-body").replaceChildren(...(games ?? []).map(game => {
+    const row = element("tr");
+    const details = element("td");
+    if (game.date) {
+      const date = element("time", gameDates.format(new Date(game.date)));
+      date.dateTime = game.date;
+      details.append(date);
+    } else {
+      details.append("Date à confirmer");
+    }
+    if (game.time) {
+      const [hours, minutes] = game.time.split(":");
+      details.append(` · ${Number(hours)} h${minutes === "00" ? "" : " " + minutes}`);
+    }
+    if (game.venue) details.append(element("small", game.venue));
+    const visitor = element("td", names.get(game.visitor));
+    const home = element("td", names.get(game.home));
+    const result = element("td");
+    if (game.score) {
+      const link = element("a", game.score.join(" – "));
+      link.href = "https://diffusion.rseq.ca/Default.aspx?Type=Game&GameId=" + encodeURIComponent(game.id);
+      link.target = "_blank";
+      link.rel = "noopener";
+      result.append(link);
+    } else {
+      result.textContent = game.cancelled ? "Annulé" : "—";
+    }
+    row.append(details, visitor, home, result);
+    return row;
+  }));
+  $("schedule-scroll").hidden = !games?.length;
+  $("schedule-notice").hidden = Boolean(games?.length);
+  $("schedule-notice").textContent = games
+    ? "Aucun match au calendrier."
+    : "Le calendrier est indisponible pour cette extraction.";
 }
 
 function render() {
@@ -371,6 +417,7 @@ async function load() {
     );
     render();
     renderStandings();
+    renderSchedule(teams);
     showView();
   } catch (error) {
     if (!dataset) {
@@ -382,6 +429,9 @@ async function load() {
           : "Impossible de charger le classement. Une nouvelle tentative aura lieu automatiquement.";
       $("leaders-notice").textContent = $("notice").textContent;
       $("standings-notice").textContent = $("notice").textContent;
+      $("schedule-notice").textContent = error.message === "404"
+        ? $("notice").textContent
+        : "Impossible de charger le calendrier. Une nouvelle tentative aura lieu automatiquement.";
     }
   } finally {
     loading = false;

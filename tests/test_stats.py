@@ -11,6 +11,8 @@ from rseq import LEAGUE, TEAMS, fetch, normalize, rank
 from sync import synchronize
 
 TEAM = next(iter(TEAMS))
+HOME = list(TEAMS)[1]
+GAME = str(uuid5(NAMESPACE_URL, 'match-test'))
 
 
 def sample(team_id, games=3):
@@ -28,6 +30,13 @@ def sample(team_id, games=3):
                 Division='D2', SexType='Masculin', Conference='Nord-Est', Sector='Collégial',
                 StandingsName='Test (2026-2027)', showBasketballStatsStandardMethod=True,
                 showBasketballStatsHudlMethod=False, Athletes=[dict(AthleteId=athlete,NumberGamesPlayed=2)],
+                TeamGames=[dict(GameId=GAME, LeagueId=LEAGUE, SeasonType=1,
+                                IsReleased=True, IsDeleted=False, IsByeWeek=False,
+                                IsCancelledAfterTeamWithdraw=False, IsPartialResults=False,
+                                IsSubmittedForStandings=False, VisitingTeamId=TEAM, HomeTeamId=HOME,
+                                GameDateFormatted='2027-02-01', GameTimeFormatted='19:30',
+                                GameLocationFormatted='Gymnase', VisitingTeamScore=-999,
+                                HomeTeamScore=-999)] if team_id in (TEAM, HOME) else [],
                 Standings=[dict(TeamId=k, LeagueId=LEAGUE, SeasonType=1, Position=i,
                                 GamesPlayed=games, Wins=2, Losses=games-2,
                                 PointsFor=153, PointsAgaints=142, AverageFormatted='0.667',
@@ -99,6 +108,9 @@ class RankingTests(unittest.TestCase):
             result=json.loads(old)
             self.assertEqual(len(result['teams']),8)
             self.assertEqual(len(result['players']),8)
+            self.assertEqual(result['games'], [dict(
+                id=GAME, visitor=TEAM, home=HOME, date='2027-02-01', time='19:30',
+                venue='Gymnase', score=None, cancelled=False)])
             self.assertEqual([row['id'] for row in result['standings']], list(reversed(TEAMS)))
             self.assertEqual(result['standings'][0], dict(
                 id=list(TEAMS)[-1], name=list(TEAMS.values())[-1], position=1, games=3,
@@ -109,6 +121,18 @@ class RankingTests(unittest.TestCase):
                 synchronize(path,lambda id: {} if id==TEAM else sample(id))
             self.assertEqual(path.read_bytes(),old)
 
+    def test_mixed_schedule(self):
+        def changing(team_id):
+            data = sample(team_id)
+            if team_id == HOME:
+                data['TeamGames'][0]['GameTimeFormatted'] = '20:00'
+            return data
+
+        with tempfile.TemporaryDirectory() as folder:
+            dest = Path(folder) / 'data.json'
+            with self.assertRaisesRegex(ValueError, 'calendrier modifié'):
+                synchronize(dest, changing)
+            self.assertFalse(dest.exists())
 
     def test_mixed_standings(self):
         for field in ('GamesPlayed', 'PointsFor'):
