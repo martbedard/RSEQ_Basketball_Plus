@@ -159,7 +159,7 @@ const updateBoards = groups.map(([title, stats]) => {
 const views = [
   { hash: "#classement", section: $("standings-view"), link: $("standings-link"), title: "Classement des équipes" },
   { hash: "#calendrier", section: $("schedule-view"), link: $("schedule-link"), title: "Calendrier" },
-  { hash: "#statistiques", section: $("all-stats"), link: $("all-link"), title: "Classement des marqueurs" },
+  { hash: "#statistiques", section: $("all-stats"), link: $("all-link"), title: "Statistiques Individuelles" },
   { hash: "#meneurs", section: $("leaders-view"), link: $("leaders-link"), title: "Meneurs par catégorie" },
 ];
 const [standingsView, scheduleView, playersView, leadersView] = views;
