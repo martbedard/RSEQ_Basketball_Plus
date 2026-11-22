@@ -574,7 +574,9 @@ td:first-child {
 #standings-head [aria-sort] button::before {
   visibility: visible;
 }
-#standings-head [aria-sort] {
+#standings-head [aria-sort],
+#standings-body .is-sorted {
+  background: var(--score);
   color: var(--ink);
 }
 #standings-head [aria-sort="ascending"] button::before {
@@ -589,29 +591,6 @@ td:first-child {
 #standings-scroll td[data-key="name"] a {
   font-weight: 650;
   text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
-}
-#standings-scroll :is(th, td)[data-key$="PerGame"] {
-  background: color-mix(in srgb, var(--score) 28%, var(--paper));
-}
-#standings-scroll tr:nth-child(even) td[data-key$="PerGame"] {
-  background: color-mix(in srgb, var(--score) 28%, var(--stripe));
-}
-#standings-scroll tr:hover td[data-key$="PerGame"],
-#standings-scroll th[data-key$="PerGame"] {
-  background: color-mix(in srgb, var(--score) 28%, var(--bg));
-}
-#standings-scroll td[data-key$="PerGame"] {
-  font-weight: 650;
-}
-#standings-scroll :is(th, td)[data-key="pointsForPerGame"] {
-  box-shadow: inset 1px 0 var(--line);
-}
-#standings-scroll :is(th, td)[data-key="pointsAgainstPerGame"] {
-  box-shadow: inset -1px 0 var(--line);
-}
-#standings-view :is(th, td):last-child {
-  background: var(--score);
-  font-weight: 750;
 }
 @media (max-width: 720px) {
   #standings-scroll {

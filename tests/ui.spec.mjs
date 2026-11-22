@@ -529,6 +529,18 @@ test("les colonnes du classement se trient dans les deux sens", async ({ page })
   await page.goto("/");
   await expect(page.locator("#standings-body tr:last-child td").filter({ hasText: /^—$/ })).toHaveCount(2);
   const positions = page.locator("#standings-body td:first-child");
+  const table = page.locator("#standings-scroll table");
+  const highlightMatchesSort = () => table.evaluate(element => {
+    const selected = element.tHead.querySelector("[aria-sort]");
+    const highlight = getComputedStyle(selected).backgroundColor;
+    return Array.from(element.rows).every(row => {
+      const backgrounds = Array.from(row.cells, cell => getComputedStyle(cell).backgroundColor);
+      return new Set(backgrounds).size === 2 && backgrounds.indexOf(highlight) === selected.cellIndex &&
+        backgrounds.lastIndexOf(highlight) === selected.cellIndex;
+    });
+  });
+  await expect(page.locator("#standings-head [aria-sort]")).toHaveAttribute("data-key", "position");
+  expect(await highlightMatchesSort()).toBe(true);
   const keys = ["position", "name", "games", "wins", "losses", "pointsFor",
     "pointsAgainst", "pointsForPerGame", "pointsAgainstPerGame", "average", "difference", "points"];
   for (const key of keys) {
@@ -540,6 +552,7 @@ test("les colonnes du classement se trient dans les deux sens", async ({ page })
       else await button.click();
       await expect(header).toHaveAttribute("aria-sort", direction === 1 ? "ascending" : "descending");
       await expect(page.locator("#standings-head [aria-sort]")).toHaveCount(1);
+      expect(await highlightMatchesSort()).toBe(true);
       const expected = [...standings].sort((a, b) => {
         if (key.endsWith("PerGame")) {
           if (!a.games || !b.games) return Number(!a.games) - Number(!b.games) || a.position - b.position;
@@ -554,4 +567,6 @@ test("les colonnes du classement se trient dans les deux sens", async ({ page })
   }
   await page.reload();
   await expect(positions).toHaveText(standings.map(team => String(team.position)));
+  await expect(page.locator("#standings-head [aria-sort]")).toHaveAttribute("data-key", "position");
+  expect(await highlightMatchesSort()).toBe(true);
 });

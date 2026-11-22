@@ -269,11 +269,12 @@ function renderStandings() {
   $("standings-body").replaceChildren(...rows.map(team => {
     const row = element("tr");
     for (const header of standingsHeaders) {
-      const { key } = header.dataset;
+      const columnKey = header.dataset.key;
       const cell = element("td");
-      cell.dataset.key = key;
-      if (key === "name") cell.append(teamLink(team.id, team.name));
-      else cell.textContent = display(key, team[key]);
+      cell.dataset.key = columnKey;
+      cell.classList.toggle("is-sorted", columnKey === key);
+      if (columnKey === "name") cell.append(teamLink(team.id, team.name));
+      else cell.textContent = display(columnKey, team[columnKey]);
       row.append(cell);
     }
     return row;
