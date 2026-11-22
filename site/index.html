@@ -10,7 +10,7 @@
     />
     <title>RSEQ Basketball D2 - M - Nord Est</title>
     <link rel="stylesheet" href="./style.css?v=classement-equipes" />
-    <script type="module" src="./app.mjs?v=classement-equipes"></script>
+    <script type="module" src="./app.mjs?v=classement-accueil"></script>
   </head>
   <body>
     <header>
@@ -31,7 +31,7 @@
         <div class="court" aria-hidden="true"><i></i></div>
         <div class="hero-copy">
           <p class="overline">Basketball collégial masculin · D2</p>
-          <h1 id="title">Classement des marqueurs</h1>
+          <h1 id="title">Classement des équipes</h1>
           <p class="subtitle">Nord-Est <span>/</span> 2026-2027</p>
         </div>
         <div class="leader" id="leader" hidden>
@@ -41,19 +41,19 @@
       </section>
       <div class="metrics">
         <div><strong id="teams">—</strong> équipes intégrées</div>
-        <div id="eligible-metric"><strong id="eligible">—</strong> joueurs admissibles</div>
+        <div id="eligible-metric" hidden><strong id="eligible">—</strong> joueurs admissibles</div>
       </div>
       <div class="view-toolbar">
         <nav aria-label="Vue des statistiques">
-          <a id="all-link" href="./" aria-current="page">Statistiques Individuelles</a>
+          <a id="standings-link" href="#classement" aria-current="page">Classement</a>
+          <a id="all-link" href="#statistiques">Statistiques Individuelles</a>
           <a id="leaders-link" href="#meneurs">Meneurs par catégorie</a>
-          <a id="standings-link" href="#classement">Classement</a>
         </nav>
         <button id="copy-view" type="button">Copier le lien</button>
         <span id="copy-feedback" aria-live="polite"></span>
         <input id="share-url" aria-label="Lien à copier" readonly hidden />
       </div>
-      <section id="all-stats" class="ranking" aria-label="Classement des joueurs">
+      <section id="all-stats" class="ranking" aria-label="Classement des joueurs" hidden>
         <div class="toolbar">
           <div class="tabs" role="group" aria-label="Étendue du classement">
             <button data-limit="10" aria-pressed="false">Top 10</button
@@ -106,7 +106,7 @@
         <p class="notice" role="status" id="leaders-notice">Chargement du classement…</p>
         <div class="leaderboards" id="boards"></div>
       </section>
-      <section id="standings-view" class="ranking" aria-label="Classement des équipes" hidden>
+      <section id="standings-view" class="ranking" aria-label="Classement des équipes">
         <p class="notice" role="status" id="standings-notice">Chargement du classement…</p>
         <div id="standings-scroll" class="scroll" tabindex="0" role="region"
           aria-label="Tableau des équipes, défilement horizontal" hidden>

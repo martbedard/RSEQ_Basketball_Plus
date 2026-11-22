@@ -141,14 +141,14 @@ const updateBoards = groups.map(([title, stats]) => {
 });
 
 const views = [
-  { hash: "", section: $("all-stats"), link: $("all-link"), title: "Classement des marqueurs" },
-  { hash: "#meneurs", section: $("leaders-view"), link: $("leaders-link"), title: "Meneurs par catégorie" },
   { hash: "#classement", section: $("standings-view"), link: $("standings-link"), title: "Classement des équipes" },
+  { hash: "#statistiques", section: $("all-stats"), link: $("all-link"), title: "Classement des marqueurs" },
+  { hash: "#meneurs", section: $("leaders-view"), link: $("leaders-link"), title: "Meneurs par catégorie" },
 ];
-const [playersView, leadersView, standingsView] = views;
+const [standingsView, playersView, leadersView] = views;
 
 function showView() {
-  const active = views.find(view => view.hash === location.hash) ?? playersView;
+  const active = views.find(view => view.hash === location.hash) ?? standingsView;
   for (const view of views) {
     view.section.hidden = view !== active;
     if (view === active) view.link.setAttribute("aria-current", "page");
@@ -164,9 +164,6 @@ function showView() {
   if (active === leadersView && dataset) updateBoards.forEach(update => update());
 }
 // Real links also support opening a view in a new tab.
-const base = new URL(location.href);
-base.hash = "";
-$("all-link").href = base.href;
 for (const { link } of views) {
   link.addEventListener("click", event => {
     if (event.ctrlKey || event.metaKey || event.shiftKey || event.altKey || event.button !== 0) return;

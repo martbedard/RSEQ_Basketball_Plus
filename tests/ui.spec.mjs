@@ -4,7 +4,7 @@ import { readFile } from "node:fs/promises";
 test("le rang du tableau et du CSV suit la statistique triée", async ({ page }) => {
   const data = JSON.parse(await readFile(new URL("../archives/2026-11.json", import.meta.url), "utf8"));
   await page.route("**/data.json", route => route.fulfill({ json: data }));
-  await page.goto("/");
+  await page.goto("/#statistiques");
   const row = page.getByRole("row").filter({ hasText: "Isaac Bédard" });
   const rank = row.locator('td[data-key="rank"]');
   await expect(rank).toHaveText("23");
@@ -47,7 +47,7 @@ test("les noms des équipes ouvrent leur fiche RSEQ dans un nouvel onglet", asyn
   await page.route("**/data.json", (route) => route.fulfill({ json: data }));
   const teamUrl = (id) => "https://diffusion.rseq.ca/Default?Type=Team&TeamId=" + id;
   await context.route("https://diffusion.rseq.ca/**", (route) => route.fulfill({ body: "RSEQ" }));
-  await page.goto("/");
+  await page.goto("/#statistiques");
   await page.locator(".sources summary").click();
   for (const team of data.teams) {
     const rowLink = page.locator("#body").getByRole("link", { name: team.name, exact: true }).first();
@@ -76,7 +76,7 @@ test("un onglet ouvert affiche la nouvelle extraction dans les cinq minutes", as
   const data = await (await request.get("/data.json")).json();
   await page.clock.install();
   await page.route("**/data.json", (route) => route.fulfill({ json: data }));
-  await page.goto("/");
+  await page.goto("/#statistiques");
   const footerDetails = page.getByRole("contentinfo").locator(".footer-details");
   await expect(footerDetails).toContainText("Classement indépendant · Données du RSEQ");
   const timestamp = footerDetails.locator("#updated");
@@ -90,7 +90,7 @@ test("la fiche reprend les paniers et lancers francs réussis du classement", as
   const archive = new URL("../archives/2026-11.json", import.meta.url);
   const data = JSON.parse(await readFile(archive, "utf8"));
   await page.route("**/data.json", (route) => route.fulfill({ json: data }));
-  await page.goto("/");
+  await page.goto("/#statistiques");
   const row = page.getByRole("row").filter({ hasText: "Christ-Ariel Oulaï" });
   await row.getByRole("button").click();
   const dialog = page.getByRole("dialog");
@@ -122,7 +122,7 @@ test("la fiche reprend les paniers et lancers francs réussis du classement", as
 test("les valeurs et les rangs restent alignés dans la fiche après filtrage", async ({ page }) => {
   const data = JSON.parse(await readFile(new URL("../archives/2026-11.json", import.meta.url), "utf8"));
   await page.route("**/data.json", route => route.fulfill({ json: data }));
-  await page.goto("/");
+  await page.goto("/#statistiques");
   await page.getByLabel("Rechercher un joueur").fill("Isaac Bédard");
   await page.getByRole("button", { name: "Isaac Bédard", exact: true }).click();
   const dialog = page.getByRole("dialog");
@@ -140,7 +140,7 @@ test("les valeurs et les rangs restent alignés dans la fiche après filtrage", 
 });
 
 test("seul un clic ou un toucher à l’extérieur ferme la fiche", async ({ page, hasTouch }) => {
-  await page.goto("/");
+  await page.goto("/#statistiques");
   const player = page.locator("#body tr").first().getByRole("button");
   await player.click();
   const dialog = page.getByRole("dialog");
@@ -169,7 +169,7 @@ test("les fiches de Limoilou chargent les portraits par numéro de maillot", asy
   const archive = new URL("../archives/2026-11.json", import.meta.url);
   const data = JSON.parse(await readFile(archive, "utf8"));
   await page.route("**/data.json", (route) => route.fulfill({ json: data }));
-  await page.goto("/");
+  await page.goto("/#statistiques");
   await page.getByRole("button", { name: "Tous", exact: true }).click();
   const dialog = page.getByRole("dialog");
   for (const player of data.players.filter((p) => p.team === "Limoilou")) {
@@ -197,7 +197,7 @@ test("portrait à l’ouverture, changement de joueur et photo indisponible", as
     });
   });
 
-  await page.goto("/");
+  await page.goto("/#statistiques");
   await page.getByRole("button", { name: "Tous", exact: true }).click();
   expect(requests).toBe(0);
   const dialog = page.getByRole("dialog");
@@ -224,7 +224,7 @@ test("classement officiel, sélections, fiche, CSV et défilement", async ({
   request,
 }, info) => {
   const data = await (await request.get("/data.json")).json();
-  await page.goto("/");
+  await page.goto("/#statistiques");
   const rows = page.locator("#body tr");
   const allPlayers = page.getByRole("button", { name: "Tous", exact: true });
   const teamFilter = page.getByLabel("Filtrer par équipe");
@@ -291,7 +291,7 @@ test("chargement, erreur et affichage d’une ancienne vérification sans averti
     await gate;
     await route.fulfill({ status: 404, body: "" });
   });
-  await page.goto("/");
+  await page.goto("/#statistiques");
   await expect(page.getByRole("status")).toContainText("Chargement");
   release();
   await expect(page.getByRole("status")).toContainText(
@@ -359,13 +359,13 @@ test("les sept classements par catégorie et les fiches utilisent les données d
 
 test("les liens de vue se copient et la navigation conserve les filtres", async ({ page, context, baseURL }) => {
   await context.grantPermissions(["clipboard-read", "clipboard-write"]);
-  await page.goto("/");
+  await page.goto("/#statistiques");
   const p = (await (await page.request.get("/data.json")).json()).players[0];
   await page.getByRole("button", { name: "Top 10", exact: true }).click();
   await page.getByLabel("Filtrer par équipe").selectOption(p.teamId);
   await page.getByLabel("Rechercher un joueur").fill(p.name);
   await page.getByRole("button", { name: "Trier par points totaux" }).click();
-  for (const [label, suffix] of [["Statistiques Individuelles", ""], ["Classement", "#classement"], ["Meneurs par catégorie", "#meneurs"]]) {
+  for (const [label, suffix] of [["Statistiques Individuelles", "#statistiques"], ["Classement", "#classement"], ["Meneurs par catégorie", "#meneurs"]]) {
     const link = page.getByRole("link", { name: label, exact: true });
     await link.focus();
     await page.keyboard.press("Enter");
@@ -396,7 +396,10 @@ test("les liens de vue se copient et la navigation conserve les filtres", async 
 
 test("le classement des équipes reprend toutes les colonnes et positions du RSEQ", async ({ page }) => {
   const { standings } = await (await page.request.get("/data.json")).json();
-  await page.goto("/#classement");
+  await page.goto("/");
+  await expect(page.getByRole("navigation", { name: "Vue des statistiques" }).getByRole("link")).toHaveText([
+    "Classement", "Statistiques Individuelles", "Meneurs par catégorie",
+  ]);
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Classement des équipes");
   await expect(page.getByRole("link", { name: "Classement", exact: true })).toHaveAttribute("aria-current", "page");
   const table = page.getByRole("table", { name: "Classement des équipes en saison régulière" });
