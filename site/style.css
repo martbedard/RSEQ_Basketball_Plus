@@ -518,36 +518,123 @@ td:first-child {
   font-weight: 700;
   color: var(--muted);
 }
+#standings-scroll {
+  --pin: 3.6rem;
+}
+#standings-scroll table {
+  min-width: 56rem;
+  table-layout: fixed;
+}
+#standings-scroll :is(th, td) {
+  padding-inline: 0.7rem;
+}
+#standings-scroll :is(th, td):first-child {
+  padding-left: 1rem;
+}
+#standings-scroll :is(th, td):last-child {
+  padding-right: 1rem;
+}
 #standings-head th {
   padding-block: 0;
+  border-top: 0;
+}
+#standings-head [data-key="name"] {
+  width: clamp(9rem, 16vw, 14rem);
+}
+#standings-head [data-key$="PerGame"] {
+  width: clamp(6.5rem, 8.5vw, 8.5rem);
 }
 #standings-head button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 0.25rem;
   width: 100%;
   min-height: 44px;
-  text-align: inherit;
+}
+#standings-head th:nth-child(-n + 2) button {
+  justify-content: flex-start;
+}
+#standings-head th:nth-child(-n + 2) button::before {
+  order: 1;
+}
+#standings-head abbr {
+  text-decoration: none;
 }
 #standings-head button:focus-visible {
   outline-offset: -3px;
 }
-#standings-head button::after {
+#standings-head button::before {
   content: "↕" / "";
-  display: inline-block;
-  width: 0.85em;
-  margin-inline-start: 0.15em;
+  inline-size: 0.75em;
   text-align: center;
+  visibility: hidden;
 }
-#standings-head [aria-sort="ascending"] button::after {
+#standings-head :is(button:hover, button:focus-visible)::before,
+#standings-head [aria-sort] button::before {
+  visibility: visible;
+}
+#standings-head [aria-sort] {
+  color: var(--ink);
+}
+#standings-head [aria-sort="ascending"] button::before {
   content: "↑" / "";
 }
-#standings-head [aria-sort="descending"] button::after {
+#standings-head [aria-sort="descending"] button::before {
   content: "↓" / "";
 }
 #standings-view :is(th, td):nth-child(3) {
   text-align: right;
 }
+#standings-scroll td[data-key="name"] a {
+  font-weight: 650;
+  text-decoration-color: color-mix(in srgb, currentColor 40%, transparent);
+}
+#standings-scroll :is(th, td)[data-key$="PerGame"] {
+  background: color-mix(in srgb, var(--score) 28%, var(--paper));
+}
+#standings-scroll tr:nth-child(even) td[data-key$="PerGame"] {
+  background: color-mix(in srgb, var(--score) 28%, var(--stripe));
+}
+#standings-scroll tr:hover td[data-key$="PerGame"],
+#standings-scroll th[data-key$="PerGame"] {
+  background: color-mix(in srgb, var(--score) 28%, var(--bg));
+}
+#standings-scroll td[data-key$="PerGame"] {
+  font-weight: 650;
+}
+#standings-scroll :is(th, td)[data-key="pointsForPerGame"] {
+  box-shadow: inset 1px 0 var(--line);
+}
+#standings-scroll :is(th, td)[data-key="pointsAgainstPerGame"] {
+  box-shadow: inset -1px 0 var(--line);
+}
 #standings-view :is(th, td):last-child {
   background: var(--score);
   font-weight: 750;
+}
+@media (max-width: 720px) {
+  #standings-scroll {
+    --pin: 3.4rem;
+  }
+  #standings-scroll table {
+    min-width: 52rem;
+  }
+  #standings-scroll :is(th, td) {
+    padding-inline: 0.55rem;
+  }
+  #standings-scroll :is(th, td):first-child {
+    padding-inline: 0.8rem 0.3rem;
+  }
+  #standings-head [data-key="name"] {
+    width: 8.35rem;
+  }
+  #standings-scroll :is(th, td)[data-key="name"] {
+    box-shadow: 1px 0 var(--line);
+  }
+  #standings-head [data-key$="PerGame"] {
+    width: 5.5rem;
+  }
 }
 #schedule-months {
   display: grid;

@@ -271,6 +271,7 @@ function renderStandings() {
     for (const header of standingsHeaders) {
       const { key } = header.dataset;
       const cell = element("td");
+      cell.dataset.key = key;
       if (key === "name") cell.append(teamLink(team.id, team.name));
       else cell.textContent = display(key, team[key]);
       row.append(cell);

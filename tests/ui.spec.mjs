@@ -420,6 +420,28 @@ test("le classement affiche les résultats du RSEQ et les points par match", asy
     ].map(String));
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  const tableLayout = await table.evaluate(element => {
+    const textRight = node => {
+      const range = document.createRange();
+      range.selectNodeContents(node);
+      return range.getBoundingClientRect().right;
+    };
+    const [rank, team, ...stats] = element.tBodies[0].rows[0].cells;
+    const statHeaders = Array.from(element.tHead.rows[0].cells).slice(2);
+    const offsets = statHeaders.map((header, index) =>
+      Math.abs(textRight(header.querySelector("abbr")) - textRight(stats[index])));
+    const scroller = element.parentElement;
+    scroller.scrollLeft = scroller.scrollWidth;
+    const rankBox = rank.getBoundingClientRect();
+    return {
+      maxOffset: Math.max(...offsets),
+      pinnedStart: Math.abs(rankBox.left - scroller.getBoundingClientRect().left),
+      pinnedGap: Math.abs(rankBox.right - team.getBoundingClientRect().left),
+    };
+  });
+  expect(tableLayout.maxOffset).toBeLessThan(1);
+  expect(tableLayout.pinnedStart).toBeLessThan(1);
+  expect(tableLayout.pinnedGap).toBeLessThan(1);
   const old = JSON.parse(await readFile(new URL("../archives/2026-11.json", import.meta.url)));
   await page.route("**/data.json", route => route.fulfill({ json: old }));
   await page.reload();
