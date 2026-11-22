@@ -181,6 +181,12 @@ const views = [
 ];
 const [standingsView, scheduleView, playersView, leadersView] = views;
 const scheduleToday = $("schedule-today");
+const scheduleTeam = $("schedule-team");
+let scheduleTeamId = "";
+scheduleTeam.onchange = () => {
+  scheduleTeamId = scheduleTeam.value;
+  renderSchedule();
+};
 const standingsPhone = matchMedia("(max-width: 720px)");
 const copyButton = $("copy-view");
 const hero = document.querySelector(".hero");
@@ -350,12 +356,15 @@ function renderStandings() {
   $("standings-notice").textContent = "Le classement des équipes est indisponible pour cette extraction.";
 }
 
-function renderSchedule(teams) {
-  const { games } = dataset;
+function renderSchedule() {
+  const { games, teams } = dataset;
+  const filteredGames = (games ?? []).filter(game =>
+    !scheduleTeamId || game.visitor === scheduleTeamId || game.home === scheduleTeamId,
+  );
   const names = new Map(teams.map(team => [team.id, team.name]));
   const sections = document.createDocumentFragment();
   const months = new Map();
-  for (const game of games ?? []) {
+  for (const game of filteredGames) {
     const month = game.date?.slice(0, 7);
     if (!months.has(month)) {
       const section = $("schedule-month-template").content.firstElementChild.cloneNode(true);
@@ -400,10 +409,10 @@ function renderSchedule(teams) {
     months.get(month).append(row);
   }
   $("schedule-months").replaceChildren(sections);
-  scheduleToday.disabled = !games?.some(game => game.date);
-  $("schedule-notice").hidden = Boolean(games?.length);
+  scheduleToday.disabled = !filteredGames.some(game => game.date);
+  $("schedule-notice").hidden = Boolean(filteredGames.length);
   $("schedule-notice").textContent = games
-    ? "Aucun match au calendrier."
+    ? (scheduleTeamId ? "Aucun match au calendrier pour cette équipe." : "Aucun match au calendrier.")
     : "Le calendrier est indisponible pour cette extraction.";
 }
 
@@ -521,6 +530,12 @@ async function load() {
       ...teams.map((t) => new Option(t.name, t.id)),
     );
     $("team").value = state.team;
+    scheduleTeam.replaceChildren(
+      new Option("Toutes les équipes", ""),
+      ...teams.map(t => new Option(t.name, t.id)),
+    );
+    scheduleTeam.value = scheduleTeamId;
+    scheduleTeam.disabled = false;
     $("sources").replaceChildren(
       ...teams.map((t) => {
         const li = element("li");
@@ -543,7 +558,7 @@ async function load() {
     );
     render();
     renderStandings();
-    renderSchedule(teams);
+    renderSchedule();
     showView();
   } catch (error) {
     if (!dataset) {

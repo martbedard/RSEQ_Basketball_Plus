@@ -553,6 +553,63 @@ test("le calendrier partage les matchs et résultats de la saison régulière", 
   await expect(page.getByRole("button", { name: "Aujourd’hui" })).toBeDisabled();
 });
 
+test("le filtre du calendrier affiche les matchs à domicile et à l’extérieur de chaque équipe", async ({ page }) => {
+  const data = await (await page.request.get("/data.json")).json();
+  await page.goto("/#calendrier");
+  const filter = page.getByLabel("Filtrer le calendrier par équipe");
+  await expect(filter).toBeEnabled();
+  await expect(filter.locator("option")).toHaveText([
+    "Toutes les équipes",
+    ...data.teams.map(team => team.name).sort((a, b) => a.localeCompare(b, "fr-CA")),
+  ]);
+  const rows = page.locator("#schedule-months tbody tr");
+  for (const team of data.teams) {
+    await filter.selectOption(team.id);
+    const games = data.games.filter(game => game.visitor === team.id || game.home === team.id);
+    expect(games.some(game => game.visitor === team.id)).toBe(true);
+    expect(games.some(game => game.home === team.id)).toBe(true);
+    await expect(rows).toHaveCount(games.length);
+    const pairings = await rows.evaluateAll(rows => rows.map(row =>
+      [...row.querySelectorAll("td:nth-child(2) a, td:nth-child(3) a")]
+        .map(link => new URL(link.href).searchParams.get("TeamId")),
+    ));
+    expect(pairings).toEqual(games.map(game => [game.visitor, game.home]));
+    await expect(page.locator(".schedule-month")).toHaveCount(new Set(games.map(game => game.date?.slice(0, 7))).size);
+  }
+  const selected = await filter.inputValue();
+  await page.locator("#all-link").click();
+  await expect(page.locator("#team")).toHaveValue("");
+  await page.locator("#schedule-link").click();
+  await expect(filter).toHaveValue(selected);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await filter.selectOption("");
+  await expect(rows).toHaveCount(data.games.length);
+});
+
+test("le calendrier conserve son filtre après actualisation et gère les équipes sans match", async ({ page }) => {
+  const data = await (await page.request.get("/data.json")).json();
+  const team = data.teams[0];
+  const game = data.games.find(game => game.home === team.id || game.visitor === team.id);
+  data.games = [game];
+  await page.route("**/data.json", route => route.fulfill({ json: data }));
+  await page.goto("/#calendrier");
+  const filter = page.getByLabel("Filtrer le calendrier par équipe");
+  await expect(filter).toBeEnabled();
+  await filter.selectOption(team.id);
+  await page.getByRole("button", { name: "Aujourd’hui" }).click();
+  await expect(page.locator("#schedule-months tbody tr")).toBeFocused();
+  data.updated = new Date(Date.parse(data.updated) + 60000).toISOString();
+  data.games = data.games.filter(game => game.home !== team.id && game.visitor !== team.id);
+  const refresh = page.waitForResponse("**/data.json");
+  await page.evaluate(() => document.dispatchEvent(new Event("visibilitychange")));
+  await refresh;
+  await expect(filter).toHaveValue(team.id);
+  await expect(page.locator("#schedule-months tbody tr")).toHaveCount(0);
+  await expect(page.locator(".schedule-month")).toHaveCount(0);
+  await expect(page.locator("#schedule-notice")).toHaveText("Aucun match au calendrier pour cette équipe.");
+  await expect(page.getByRole("button", { name: "Aujourd’hui" })).toBeDisabled();
+});
+
 test("Aujourd’hui mène au premier match de la date la plus proche au Québec", async ({ page }) => {
   const data = await (await page.request.get("/data.json")).json();
   const dates = ["2026-11-21", "2026-11-23", "2026-11-23", "2026-11-24"];
