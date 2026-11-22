@@ -394,7 +394,7 @@ test("les liens de vue se copient et la navigation conserve les filtres", async 
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Meneurs par catégorie");
 });
 
-test("le classement des équipes reprend toutes les colonnes et positions du RSEQ", async ({ page }) => {
+test("le classement affiche les résultats du RSEQ et les points par match", async ({ page }) => {
   const { standings } = await (await page.request.get("/data.json")).json();
   await page.goto("/");
   await expect(page.getByRole("navigation", { name: "Vue des statistiques" }).getByRole("link")).toHaveText([
@@ -404,12 +404,19 @@ test("le classement des équipes reprend toutes les colonnes et positions du RSE
   await expect(page.getByRole("link", { name: "Classement", exact: true })).toHaveAttribute("aria-current", "page");
   const table = page.getByRole("table", { name: "Classement des équipes en saison régulière" });
   const rows = table.locator("tbody tr");
+  const perGame = new Intl.NumberFormat("fr-CA", {
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1,
+  });
   await expect(rows).toHaveCount(8);
   await expect(table.locator('th[data-key="position"]')).toHaveAttribute("aria-sort", "ascending");
   for (const [i, team] of standings.entries()) {
     await expect(rows.nth(i).getByRole("cell")).toHaveText([
       team.position, team.name, team.games, team.wins, team.losses, team.pointsFor,
-      team.pointsAgainst, team.average, team.difference, team.points,
+      team.pointsAgainst,
+      team.games ? perGame.format(team.pointsFor / team.games) : "—",
+      team.games ? perGame.format(team.pointsAgainst / team.games) : "—",
+      team.average, team.difference, team.points,
     ].map(String));
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -491,12 +498,17 @@ test("Aujourd’hui mène au premier match de la date la plus proche au Québec"
   }
 });
 
-test("les dix colonnes du classement se trient dans les deux sens", async ({ page }) => {
-  const { standings } = await (await page.request.get("/data.json")).json();
+test("les colonnes du classement se trient dans les deux sens", async ({ page }) => {
+  const data = await (await page.request.get("/data.json")).json();
+  const { standings } = data;
+  const teamWithoutGames = standings.at(-1);
+  Object.assign(teamWithoutGames, { games: 0, wins: 0, losses: 0, pointsFor: 0, pointsAgainst: 0 });
+  await page.route("**/data.json", route => route.fulfill({ json: data }));
   await page.goto("/");
+  await expect(page.locator("#standings-body tr:last-child td").filter({ hasText: /^—$/ })).toHaveCount(2);
   const positions = page.locator("#standings-body td:first-child");
   const keys = ["position", "name", "games", "wins", "losses", "pointsFor",
-    "pointsAgainst", "average", "difference", "points"];
+    "pointsAgainst", "pointsForPerGame", "pointsAgainstPerGame", "average", "difference", "points"];
   for (const key of keys) {
     const header = page.locator(`#standings-head th[data-key="${key}"]`);
     const button = header.getByRole("button");
@@ -507,6 +519,11 @@ test("les dix colonnes du classement se trient dans les deux sens", async ({ pag
       await expect(header).toHaveAttribute("aria-sort", direction === 1 ? "ascending" : "descending");
       await expect(page.locator("#standings-head [aria-sort]")).toHaveCount(1);
       const expected = [...standings].sort((a, b) => {
+        if (key.endsWith("PerGame")) {
+          if (!a.games || !b.games) return Number(!a.games) - Number(!b.games) || a.position - b.position;
+          const total = key === "pointsForPerGame" ? "pointsFor" : "pointsAgainst";
+          return direction * (a[total] / a.games - b[total] / b.games) || a.position - b.position;
+        }
         const order = key === "name" ? a.name.localeCompare(b.name, "fr-CA") : Number(a[key]) - Number(b[key]);
         return direction * order || a.position - b.position;
       });

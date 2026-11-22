@@ -1,4 +1,4 @@
-import { columns, display, profileStats, profileRanks, categoryLeaders, selectRows, tableValue, csv } from "./model.mjs?v=05d10e58";
+import { columns, display, profileStats, profileRanks, categoryLeaders, selectRows, tableValue, csv } from "./model.mjs?v=points-par-match";
 import { portraits } from "./portraits.mjs";
 const $ = (id) => document.getElementById(id);
 const profileDialog = $("profile");
@@ -247,8 +247,15 @@ for (const header of standingsHeaders) {
 function renderStandings() {
   const { standings, teams } = dataset;
   const { key, direction } = standingsSort;
-  const rows = standings?.length === teams.length ? [...standings] : [];
+  const rows = standings?.length === teams.length ? standings.map(team => ({
+    ...team,
+    pointsForPerGame: team.games > 0 ? team.pointsFor / team.games : null,
+    pointsAgainstPerGame: team.games > 0 ? team.pointsAgainst / team.games : null,
+  })) : [];
   rows.sort((a, b) => {
+    if (a[key] === null || b[key] === null) {
+      return Number(a[key] === null) - Number(b[key] === null) || a.position - b.position;
+    }
     const order = key === "name" ? a.name.localeCompare(b.name, "fr-CA") : a[key] - b[key];
     return direction * order || a.position - b.position;
   });
@@ -265,7 +272,7 @@ function renderStandings() {
       const { key } = header.dataset;
       const cell = element("td");
       if (key === "name") cell.append(teamLink(team.id, team.name));
-      else cell.textContent = team[key];
+      else cell.textContent = display(key, team[key]);
       row.append(cell);
     }
     return row;

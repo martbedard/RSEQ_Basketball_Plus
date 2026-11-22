@@ -27,7 +27,7 @@ const fold = (value) =>
   value.normalize("NFD").replace(/\p{M}/gu, "").toLocaleLowerCase("fr-CA");
 export function display(key, value) {
   if (value == null || value === "") return "—";
-  return ["ppg", "rpg", "pct2", "pct3", "pctft"].includes(key)
+  return ["ppg", "rpg", "pct2", "pct3", "pctft", "pointsForPerGame", "pointsAgainstPerGame"].includes(key)
     ? decimals.format(value)
     : String(value);
 }
