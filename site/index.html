@@ -9,8 +9,8 @@
       content="Classement, calendrier et statistiques individuelles du basketball collégial masculin D2 du RSEQ, conférence Nord-Est, saison 2026-2027."
     />
     <title>RSEQ Basketball D2 - M - Nord Est</title>
-    <link rel="stylesheet" href="./style.css?v=calendrier-mois" />
-    <script type="module" src="./app.mjs?v=calendrier-mois"></script>
+    <link rel="stylesheet" href="./style.css?v=calendrier-aujourdhui" />
+    <script type="module" src="./app.mjs?v=calendrier-aujourdhui"></script>
   </head>
   <body>
     <header>
@@ -50,7 +50,10 @@
           <a id="all-link" href="#statistiques">Statistiques Individuelles</a>
           <a id="leaders-link" href="#meneurs">Meneurs par catégorie</a>
         </nav>
-        <button id="copy-view" type="button">Copier le lien</button>
+        <div class="view-actions">
+          <button id="copy-view" type="button">Copier le lien</button>
+          <button id="schedule-today" type="button" hidden disabled>Aujourd’hui</button>
+        </div>
         <span id="copy-feedback" aria-live="polite"></span>
         <input id="share-url" aria-label="Lien à copier" readonly hidden />
       </div>

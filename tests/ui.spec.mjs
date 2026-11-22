@@ -464,6 +464,31 @@ test("le calendrier partage les matchs et résultats de la saison régulière", 
   await page.route("**/data.json", route => route.fulfill({ json: old }));
   await page.reload();
   await expect(page.getByRole("status")).toContainText("Le calendrier est indisponible");
+  await expect(page.getByRole("button", { name: "Aujourd’hui" })).toBeDisabled();
+});
+
+test("Aujourd’hui mène au premier match de la date la plus proche au Québec", async ({ page }) => {
+  const data = await (await page.request.get("/data.json")).json();
+  const dates = ["2026-11-21", "2026-11-23", "2026-11-23", "2026-11-24"];
+  data.games = data.games.slice(0, dates.length).map((game, index) => ({ ...game, date: dates[index] }));
+  await page.route("**/data.json", route => route.fulfill({ json: data }));
+  await page.goto("/");
+  const today = page.getByRole("button", { name: "Aujourd’hui" });
+  await expect(today).toBeHidden();
+  await page.getByRole("link", { name: "Calendrier", exact: true }).click();
+  await expect(today).toBeEnabled();
+  const rows = page.locator("#schedule-months tbody tr");
+  for (const [now, expected] of [
+    ["2026-11-24T04:30:00Z", 1],
+    ["2026-11-22T17:00:00Z", 1],
+    ["2026-11-25T17:00:00Z", 3],
+  ]) {
+    await page.clock.setFixedTime(new Date(now));
+    await today.click();
+    await expect(rows.nth(expected)).toBeFocused();
+    await expect(rows.nth(expected)).toBeInViewport();
+    await expect(page).toHaveURL(/#calendrier$/);
+  }
 });
 
 test("les dix colonnes du classement se trient dans les deux sens", async ({ page }) => {

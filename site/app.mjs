@@ -21,6 +21,12 @@ const gameMonths = new Intl.DateTimeFormat("fr-CA", {
   month: "long",
   year: "numeric",
 });
+const quebecDate = new Intl.DateTimeFormat("fr-CA", {
+  timeZone: "America/Toronto",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
 function element(tag, text) {
   const node = document.createElement(tag);
   if (text != null) node.textContent = text;
@@ -156,7 +162,8 @@ const views = [
   { hash: "#statistiques", section: $("all-stats"), link: $("all-link"), title: "Classement des marqueurs" },
   { hash: "#meneurs", section: $("leaders-view"), link: $("leaders-link"), title: "Meneurs par catégorie" },
 ];
-const [standingsView, , playersView, leadersView] = views;
+const [standingsView, scheduleView, playersView, leadersView] = views;
+const scheduleToday = $("schedule-today");
 
 function showView() {
   const active = views.find(view => view.hash === location.hash) ?? standingsView;
@@ -167,6 +174,7 @@ function showView() {
   }
   $("leader").hidden = active !== playersView || !dataset;
   $("eligible-metric").hidden = active !== playersView && active !== leadersView;
+  scheduleToday.hidden = active !== scheduleView;
   $("title").textContent = active.title;
   $("boards").hidden = !dataset;
   $("leaders-notice").hidden = Boolean(dataset);
@@ -199,6 +207,27 @@ $("copy-view").onclick = async () => {
     field.value = url;
     field.select();
     $("copy-feedback").textContent = "Lien à copier";
+  }
+};
+scheduleToday.onclick = () => {
+  const { year, month, day } = Object.fromEntries(
+    quebecDate.formatToParts(new Date()).map(({ type, value }) => [type, value]),
+  );
+  const today = Date.parse(`${year}-${month}-${day}`);
+  let nearest, nearestDate, distance = Infinity;
+  for (const date of $("schedule-months").querySelectorAll("time")) {
+    const gameDate = Date.parse(date.dateTime);
+    const difference = Math.abs(gameDate - today);
+    if (difference < distance || (difference === distance && gameDate > nearestDate)) {
+      nearest = date;
+      nearestDate = gameDate;
+      distance = difference;
+    }
+  }
+  if (nearest) {
+    const row = nearest.closest("tr");
+    row.focus({ preventScroll: true });
+    row.scrollIntoView({ block: "center" });
   }
 };
 showView();
@@ -266,6 +295,7 @@ function renderSchedule(teams) {
     const row = element("tr");
     const details = element("td");
     if (game.date) {
+      row.tabIndex = -1;
       const date = element("time", gameDates.format(new Date(game.date)));
       date.dateTime = game.date;
       details.append(date);
@@ -295,6 +325,7 @@ function renderSchedule(teams) {
     months.get(month).append(row);
   }
   $("schedule-months").replaceChildren(sections);
+  scheduleToday.disabled = !games?.some(game => game.date);
   $("schedule-notice").hidden = Boolean(games?.length);
   $("schedule-notice").textContent = games
     ? "Aucun match au calendrier."
